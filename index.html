@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Quicksand" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Rainworld Hunter Tracker</title>
+</head>
+<body>
+    <header>
+        <h1>Rain World Hunter Tracker</h1>
+
+        <label class="file-input">
+            <input id="file-upload" type="file" accept=".txt">
+            <div class="overlay">Track Save File</div>
+            <div class="name"></div>
+        </label>
+
+        <label class="check-toggle">
+            <b>Watch File</b>
+            <input type="checkbox" checked>
+            <div class="overlay"></div>
+        </label>
+    </header>
+    
+
+    
+
+    <div class="backgrounds">
+        <img src="res/bg-1.png" alt="">
+        <img class="bg-move" src="res/bg-2.png" alt="">
+    </div>
+
+    <div class="wrapper">
+        <div class="map-kills">
+            <div class="map">
+                <img class="main" src="res/map/base.png" alt="">
+                <div class="markers">
+                    <img data-region="si" src="res/map/si.png" alt="">
+                    <img data-region="cc" src="res/map/cc.png" alt="">
+                    <img data-region="ex" src="res/map/ex.png" alt="">
+                    <img data-region="fp" src="res/map/fp.png" alt="">
+                    <img data-region="fa" src="res/map/fa.png" alt="">
+                    <img data-region="os" src="res/map/os.png" alt="">
+                    <img data-region="ic" src="res/map/ic.png" alt="">
+                    <img data-region="sh" src="res/map/sh.png" alt="">
+                    <img data-region="sb" src="res/map/sb.png" alt="">
+                    <img data-region="ds" src="res/map/ds.png" alt="">
+                    <img data-region="gw" src="res/map/gw.png" alt="">
+                    <img data-region="sl" src="res/map/sl.png" alt="">
+                    <img data-region="dp" src="res/map/dp.png" alt="">
+                </div>
+            </div>
+            <div class="kills">
+                <h3>KILLS</h3>
+                <div class="container creature-kill-container">
+                    <div class="creature creature-kill">
+                        <div class="creature-icon"></div>
+                        <div class="kill-amount">2</div>
+                        <div class="kill-worth">x25</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="details">
+            <div class="stats-karma">
+                <div class="stats">
+                    <h3>STATISTICS</h3>
+                    <div class="row">
+                        <b>Total Time:</b> <span class="totalTime"></span>
+                    </div>
+                    <div class="row">
+                        <b>Total Food:</b> <span class="totalFood"></span>
+                    </div>
+                    <div class="row">
+                        <b>Total Cycles:</b> <span class="totalCycles"></span>
+                    </div>
+                    <div class="row">
+                        <b>Cycles Remaining:</b> <span class="remainingCycles"></span>
+                    </div>
+                    <div class="row">
+                        <b>Survives:</b> <span class="survives"></span>
+                    </div>
+                    <div class="row">
+                        <b>Deaths:</b> <span class="deaths"></span>
+                    </div>
+                    <div class="row">
+                        <b>Quits:</b> <span class="quits"></span>
+                    </div>
+                    <div class="row">
+                        <b>Current Karma:</b> <span class="currentKarma"></span>
+                    </div>
+                    <div class="row">
+                        <b>Karma Cap:</b> <span class="karmaCap"></span>
+                    </div>
+                    <div class="row">
+                        <b>Item Swallowed:</b> <span class="itemSwallowed"></span>
+                    </div>
+                    <div class="row">
+                        <b>Helped Pebbles:</b> <span class="helpedPebbles"></span>
+                    </div>
+                    <div class="row">
+                        <b>Delivered Payload:</b> <span class="deliveredPayload"></span>
+                    </div>
+                    <div class="row">
+                        <b>Ascended:</b> <span class="ascended"></span>
+                    </div>
+                </div>
+                <div class="karma-container">
+                    <div class="karmas">
+                        <div class="karma active"></div>
+                        <div class="karma inactive"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="achievements">
+                <h3>ACHIEVEMENTS</h3>
+                <div class="achievement inactive" data-achievement="survivor">
+                    <div class="title">The Survivor</div>
+                    <div class="pips"></div>
+                    <div class="progress"></div>
+                </div>
+                <div class="survivor-hidden hide">
+                    <div class="achievement inactive" data-achievement="wanderer">
+                        <div class="title">The Wanderer</div>
+                        <div class="pips"></div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="scholar">
+                        <div class="title">The Scholar</div>
+                        <div class="pips"></div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="outlaw">
+                        <div class="title">The Outlaw</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="hunter">
+                        <div class="title">The Hunter</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="friend">
+                        <div class="title">The Friend</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="monk">
+                        <div class="title">The Monk</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="chieftain">
+                        <div class="title">The Chieftain</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="saint">
+                        <div class="title">The Saint</div>
+                        <div class="status">
+                            <div class="status-bar"><div class="slider"></div></div>
+                            <div class="count"></div>
+                        </div>
+                        <div class="progress"></div>
+                    </div>
+                    <div class="achievement inactive" data-achievement="dragonSlayer">
+                        <div class="title">The Dragon Slayer</div>
+                        <div class="pips"></div>
+                        <div class="progress"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="data-parser.js"></script>
+
+</body>
+</html>

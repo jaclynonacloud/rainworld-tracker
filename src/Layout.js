@@ -97,12 +97,13 @@ export default class Layout {
             let cap = karmaCap || 4;
             //compare for column index
             const column = RW.KarmaCapTracker[cap.toString()];
+            console.log(column);
             //move to proper index
             activeKarmaDiv.style.backgroundPositionX = 
                 inactiveKarmaDiv.style.backgroundPositionX = `${-column * RW.KarmaAtlasSize.width}px`;
             //move dial to proper y position
             //switch the active to the current type
-            const offsetY = (karmaCap - karma) * RW.KarmaAtlasSize.height;
+            const offsetY = (9 - karma) * RW.KarmaAtlasSize.height;
             activeKarmaDiv.style.backgroundPositionY = `-${offsetY}px`;
             inactiveKarmaDiv.style.backgroundPositionY = `calc(-50% - ${offsetY + 75}px)`;
 

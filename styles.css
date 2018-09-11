@@ -9,6 +9,12 @@ body {
     display: none !important;
 }
 
+a {
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+}
+
 header {
     display: flex;
     flex-flow: row wrap;

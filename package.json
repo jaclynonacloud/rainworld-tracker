@@ -1,7 +1,7 @@
 {
   "name": "rainworld-tracker",
   "version": "1.0.0",
-  "description": "",
+  "description": "A tracking application to help de-mystify the hunter save file.",
   "main": "js/rainworld-tracker.js",
   "devDependencies": {
     "babel-preset-es2015": "^6.24.1",
@@ -29,9 +29,23 @@
       ]
     ]
   },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
   "author": "Jaclyn Staples",
-  "license": "ISC"
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jaclynonacloud/rainworld-tracker.git"
+  },
+  "keywords": [
+    "Rain",
+    "World",
+    "Tracker",
+    "Hunter",
+    "jaclynonacloud",
+    "Jaclyn",
+    "Staples"
+  ],
+  "bugs": {
+    "url": "https://github.com/jaclynonacloud/rainworld-tracker/issues"
+  },
+  "homepage": "https://github.com/jaclynonacloud/rainworld-tracker#readme"
 }

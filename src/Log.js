@@ -18,7 +18,6 @@ export default class Log {
         document.querySelector(".log").classList.add("hide");
     }
     static compute(data) {
-        console.log(data);
         Log.clear();
         //calculate the data
         //food

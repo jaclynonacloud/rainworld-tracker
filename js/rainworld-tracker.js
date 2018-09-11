@@ -42,7 +42,6 @@ var Log = function () {
     }, {
         key: "compute",
         value: function compute(data) {
-            console.log(data);
             Log.clear();
             //calculate the data
             //food

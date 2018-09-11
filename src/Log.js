@@ -18,6 +18,7 @@ export default class Log {
         document.querySelector(".log").classList.add("hide");
     }
     static compute(data) {
+        console.log(data);
         Log.clear();
         //calculate the data
         //food
@@ -27,7 +28,7 @@ export default class Log {
         //deaths
         Log.addRankItem("Deaths", data.deaths || 0, -3);
         //quits
-        Log.addRankItem("Quits", data.deaths || 0, -3);
+        Log.addRankItem("Quits", data.quits || 0, -3);
         //time
         Log.addRankItem("Time", data.totalTimeRaw, -1, (data.totalTimeRaw != null) ? -(data.totalTimeRaw / 60) : 0);
         //delivered payload

@@ -42,6 +42,7 @@ var Log = function () {
     }, {
         key: "compute",
         value: function compute(data) {
+            console.log(data);
             Log.clear();
             //calculate the data
             //food
@@ -51,7 +52,7 @@ var Log = function () {
             //deaths
             Log.addRankItem("Deaths", data.deaths || 0, -3);
             //quits
-            Log.addRankItem("Quits", data.deaths || 0, -3);
+            Log.addRankItem("Quits", data.quits || 0, -3);
             //time
             Log.addRankItem("Time", data.totalTimeRaw, -1, data.totalTimeRaw != null ? -(data.totalTimeRaw / 60) : 0);
             //delivered payload
@@ -676,8 +677,10 @@ var CreatureLookup = Object.freeze({
     "Scavenger": { name: "Scavenger", id: 36, score: 6 },
     "Vulture": { name: "Vulture", id: 16, score: 15 },
     "KingVulture": { name: "King Vulture", id: 45, score: 25 },
-    "SmallCentipede": { name: "Small Centipede", id: 321, score: 4 }, //added their variant to the ID
-    "Centipede": { name: "Centipede", id: 322, score: 7 },
+    // "SmallCentipede" : {name:"Small Centipede", id:321, score:4},  //added their variant to the ID
+    "SmallCentipede": { name: "Small Centipede", id: 322, score: 4 }, //added their variant to the ID
+    // "Centipede" : {name:"Centipede", id:322, score:7},
+    "Centipede": { name: "Centipede", id: 321, score: 7 },
     "LargeCentipede": { name: "Large Centipede", id: 323, score: 7 },
     "RedCentipede": { name: "Red Centipede", id: 33, score: 19 },
     "Centiwing": { name: "Centiwing", id: 34, score: 5 },

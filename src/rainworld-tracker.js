@@ -15,6 +15,7 @@ let rainworldData;
 document.getElementById("file-upload").addEventListener("change", (e) => {
     //if we have a value, fetch and send
     if(e.target.files.length <= 0) return;
+
     //try to parse
     var fileReader = new FileReader();
     fileReader.onload = (ev) => {
@@ -22,6 +23,7 @@ document.getElementById("file-upload").addEventListener("change", (e) => {
         const data = Parser.parse(fileReader.result);
         Layout.show(data);
         rainworldData = data;
+        console.log(data);
 
         //set the name in the text
         document.querySelector(".file-input .name").innerHTML = e.target.files[0].name;

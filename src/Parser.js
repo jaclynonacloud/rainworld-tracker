@@ -43,7 +43,7 @@ export default class Parser {
 
 
 function findDataValue(id, txt, tag = "") {
-    let startIndex = txt.indexOf(id);
+    let startIndex = txt.indexOf(`>${id}<`) + id.length;
     if(startIndex == -1) return "";
     if(tag != "") startIndex = txt.indexOf(tag, startIndex);
     const valueIndex = txt.indexOf(">", startIndex) + 1;
@@ -130,7 +130,7 @@ function getTimeFromSeconds(time) {
     return `${hours}:${minutes}:${seconds}`;
 }
 function _setToTens(time) {
-    if(time.toString().split("").length < 2) return time.toString() + "0";
+    if(time.toString().split("").length < 2) return `0${time}`;
     return time;
 }
 

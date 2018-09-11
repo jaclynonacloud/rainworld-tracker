@@ -260,7 +260,7 @@ exports.default = Parser;
 function findDataValue(id, txt) {
     var tag = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
 
-    var startIndex = txt.indexOf(id);
+    var startIndex = txt.indexOf(">" + id + "<") + id.length;
     if (startIndex == -1) return "";
     if (tag != "") startIndex = txt.indexOf(tag, startIndex);
     var valueIndex = txt.indexOf(">", startIndex) + 1;
@@ -367,7 +367,7 @@ function getTimeFromSeconds(time) {
     return hours + ":" + minutes + ":" + seconds;
 }
 function _setToTens(time) {
-    if (time.toString().split("").length < 2) return time.toString() + "0";
+    if (time.toString().split("").length < 2) return "0" + time;
     return time;
 }
 
@@ -1149,6 +1149,7 @@ var rainworldData = void 0;
 document.getElementById("file-upload").addEventListener("change", function (e) {
     //if we have a value, fetch and send
     if (e.target.files.length <= 0) return;
+
     //try to parse
     var fileReader = new FileReader();
     fileReader.onload = function (ev) {
@@ -1156,6 +1157,7 @@ document.getElementById("file-upload").addEventListener("change", function (e) {
         var data = _Parser2.default.parse(fileReader.result);
         _layout2.default.show(data);
         rainworldData = data;
+        console.log(data);
 
         //set the name in the text
         document.querySelector(".file-input .name").innerHTML = e.target.files[0].name;

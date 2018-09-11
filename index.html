@@ -17,10 +17,11 @@
             <div class="overlay">Track Save File</div>
             <div class="name"></div>
         </label>
+        <div class="btn-sample" title="Don't have a save file?  Test it out with this sample one!">Use Sample!</div>
 
-        <label class="check-toggle">
+        <label class="check-toggle" title="Web version of this application cannot watch files.">
             <b>Watch File</b>
-            <input type="checkbox" checked>
+            <input type="checkbox" disabled>
             <div class="overlay"></div>
         </label>
     </header>
@@ -33,7 +34,7 @@
         <img class="bg-move" src="res/bg-2.png" alt="">
     </div>
 
-    <div class="btn-calculate">Calculate Current Score</div>
+    <div class="btn-calculate">Calculate Current Ranking</div>
     <div class="wrapper">
         <div class="map-kills">
             <div class="map">
@@ -194,17 +195,42 @@
     </div>
 
 
-    <div class="current-score">
+    <div class="current-score hide">
         <div class="container">
-            <div class="btn-stats">Stats</div>
+            <div class="btn-stats">Show Log</div>
             <h3>Approximate Current Ranking:</h3>
-            <div class="score">xxxxx</div>
+            <div class="score">0</div>
+            <div class="btn-close">OK</div>
+        </div>
+    </div>
+
+    <div class="log hide">
+        <div class="container">
+            <h3>Log</h3>
+            <div class="log-list">
+                <div class="log-item">
+                    <div class="details">
+                        <div class="details-wrapper">
+                            <b class="title">Description</b>
+                            <span class="amount"></span>
+                            <span class="value"></span>
+                        </div>
+                    </div>
+                    <span class="total">0</span>
+                </div>
+                <div class="log-item full-total">
+                    <div class="details">
+                        <b>Ranking</b>
+                    </div>
+                    <span class="total">0</span>
+                </div>
+            </div>
             <div class="btn-close">OK</div>
         </div>
     </div>
 
 
-    <script src="data-parser.js"></script>
+    <script src="js/rainworld-tracker.js"></script>
 
 </body>
 </html>

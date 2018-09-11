@@ -145,7 +145,17 @@ header .check-toggle {
     height: 26px;
     overflow: hidden;
     margin-right: 10px;
+    image-rendering: crisp-edges;
 }
+.kills .creature:hover .creature-icon {
+    animation: creature-icon 1s infinite ease-in-out;
+}
+@keyframes creature-icon {
+    0% { transform: scale(1); }
+    50% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+}
+
 .kills .creature .kill-amount {
     display: flex;
     justify-content: center;
@@ -396,6 +406,74 @@ header .check-toggle {
     background: #4d6951;
 }
 
+
+.btn-calculate {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #4d6951;
+    width: max-content;
+    width: -moz-max-content;
+    padding: 10px;
+    margin: auto;
+    margin-top: 10px;
+    color: white;
+    cursor: pointer;
+}
+.btn-calculate:hover {
+    background: #71b47b;
+}
+
+
+.current-score {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+}
+.current-score .container {
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
+    align-items: center;
+    background: black;
+    width: 40vw;
+    min-width: 260px;
+    max-width: 800px;
+    min-height: 350px;
+    margin: auto;
+    color: white;
+    border: solid 1px #cecece;
+    border-radius: 10px;
+}
+.current-score .score {
+    padding: 25px;
+    font-size: 2.4em;
+    border: solid 1px #cecece;
+    border-radius: 10px;
+}
+.btn-close {
+    background: #4d6951;
+    padding: 15px;
+    margin-top: 45px;
+    border: solid 1px #cecece;
+    border-radius: 10px;
+    cursor: pointer;
+}
+.btn-close:hover {
+    background: #54915d;
+}
+.btn-stats {
+    background: #272f38;
+    padding: 5px 15px;
+    margin-bottom: 15px;
+    border: solid 1px #cecece;
+    border-radius: 10px;
+    cursor: pointer;
+}
 
 
 

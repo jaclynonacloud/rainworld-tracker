@@ -1,0 +1,46 @@
+Slugcat         5
+Green           10
+Pink            7
+Blue            6
+White           8
+Black           7
+Yellow          6
+Cyan            9
+Red             25
+Salamander      7
+Fly 
+CicadaA         2
+CicadaB         2
+Snail           1
+Leech
+SeaLeech
+PoleMimic       2
+TentaclePlant   7
+Scavenger       6
+VultureGrub
+Vulture         15
+King            25
+Small Cent
+Cent            4
+Large Cent      7
+Red Cent        19
+Centiwing       5
+Tubeworm        1
+Hazer
+LanternMouse    2
+Spider
+BigSpider       4
+SpitterSpider   5
+MirosBird       16
+Brother         14
+Daddy           25
+Deer
+Eggbug          2
+Dropwig         5
+Noodledad       5
+NoodleFly       
+Jetfish         4
+BigEel          25  | Leviathan
+
+#Scores according to:
+#SandboxSettingsInterface

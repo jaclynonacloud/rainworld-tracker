@@ -1,4 +1,4 @@
-const regionLookup = Object.freeze({
+const RegionLookup = Object.freeze({
     "Outskirts" : "os",
     "Industrial Complex" : "ic",
     "Drainage System" : "ds",
@@ -14,51 +14,57 @@ const regionLookup = Object.freeze({
     "Depths" : "dp"
 });
 
-const creatureLookup = Object.freeze({
-    "SGC" : {id:0, score:-1},
+
+const DefaultScores = Object.freeze({
+    "Food" : 1,
+    "Survival" : 5
+});
+
+//scores are in SandboxSettingsInterface | IDs are in MultiplayerUnlocks - SandboxUnlockID
+//the image IDs are CreatureTemplate.Type references, however
+const CreatureLookup = Object.freeze({
     "Slugcat" : {id:1, score:5},
-    "PinkLizard" : {id:3, score:7},
     "GreenLizard" : {id:4, score:10},
+    "PinkLizard" : {id:3, score:7},
     "BlueLizard" : {id:5, score:6},
-    "YellowLizard" : {id:6, score:6},
     "WhiteLizard" : {id:7, score:8},
-    "RedLizard" : {id:8, score:25},
     "BlackLizard" : {id:9, score:7},
-    "Salamander" : {id:10, score:7},
+    "YellowLizard" : {id:6, score:6},
     "CyanLizard" : {id:11, score:9},
-    "Snail" : {id:15, score:1},
-    "Vulture" : {id:16, score:15},
-    "LanternMouse" : {id:18, score:2},
+    "RedLizard" : {id:8, score:25},
+    "Salamander" : {id:10, score:7},
     "CicadaA" : {id:19, score:2},
     "CicadaB" : {id:20, score:2},
-    // "Spider" : 21,
-    "JetFish" : {id:22, score:4},
-    "Deer" : {id:24, score:10}, //??I don't actually know what their score is
-    "DaddyLongLegs" : {id:26, score:25},
-    "BrotherLongLegs" : {id:27, score:14},
-    "TentaclePlant" : {id:28, score:7},
+    "Snail" : {id:15, score:1},
     "PoleMimic" : {id:29, score:2},
-    "MirosBird" : {id:30, score:16},
-    "SmallCentipede" : {id:321, score:1}, //??score?
-    "Centipede" : {id:322, score:4},
-    // "MedCentipede" : {id:322, score:4},
-    "LargeCentipede" : {id:323, score:7},
-    "RedCentipede" : {id:33, score:7},
-    "Centiwing" : {id:34, score:5},
-    // "SmallCentipede" : 35,
+    "TentaclePlant" : {id:28, score:7},
     "Scavenger" : {id:36, score:6},
-    "Overseer" : {id:37, score:2}, //??
-    "EggBug" : {id:39, score:2},
+    "Vulture" : {id:16, score:15},
+    "KingVulture" : {id:45, score:25},
+    "SmallCentipede" : {id:321, score:4},  //added their variant to the ID
+    "Centipede" : {id:322, score:7},
+    "LargeCentipede" : {id:323, score:7},
+    "RedCentipede" : {id:33, score:19},
+    "Centiwing" : {id:34, score:5},
+    "Tubeworm" : {id:25, score:1},
+    "Hazer" : {id:46, score:1},
+    "LanternMouse" : {id:18, score:2},
     "BigSpider" : {id:40, score:4},
     "SpitterSpider" : {id:41, score:5},
-    "BigNeedleWorm" : {id:43, score:5},
+    "MirosBird" : {id:30, score:16},
+    "BrotherLongLegs" : {id:27, score:14},
+    "DaddyLongLegs" : {id:26, score:25},
+    "Deer" : {id:24, score:10}, //??Doesn't have a score?
+    "EggBug" : {id:39, score:2},
     "DropBug" : {id:44, score:5},
-    "KingVulture" : {id:45, score:25},
-    "Hazer" : {id:46, score:-1}
+    "BigNeedleWorm" : {id:43, score:5},
+    "JetFish" : {id:22, score:4},
+    "Leviathan" : {id:23, score:25},
+    "Overseer" : {id:37, score:2}, //??
 });
 
 
-const achievementPointRequirements = Object.freeze({
+const AchievementPointRequirements = Object.freeze({
     "survivor" : 5,
     "hunter": 12,
     "saint" : 12,
@@ -72,11 +78,11 @@ const achievementPointRequirements = Object.freeze({
 });
 
 
-const karmaAtlasSize = Object.freeze({
+const KarmaAtlasSize = Object.freeze({
     "width" : 90,
     "height" : 90
 });
-const karmaCapTracker = Object.freeze({
+const KarmaCapTracker = Object.freeze({
     "9" : 0,
     "8" : 1,
     "7" : 2,
@@ -120,7 +126,6 @@ const spriteAtlasIndex = Object.freeze({
     "KingVulture" : {x:1,y:3},
     "SmallCentipede" : {x:2,y:3},
     "Centipede" : {x:3,y:3},
-    // "MedCentipede" : {x:3,y:3},
     "LargeCentipede" : {x:4,y:3},
     "RedCentipede" : {x:5,y:3},
     "Centiwing" : {x:0,y:4},
@@ -302,9 +307,9 @@ function findDataExists(id, txt) {
 
 
 function _getCreatureByID(id) {
-    for(let key of Object.keys(creatureLookup)) {
-        if(creatureLookup[key].id == id) {
-            let creatureObj = creatureLookup[key];
+    for(let key of Object.keys(CreatureLookup)) {
+        if(CreatureLookup[key].id == id) {
+            let creatureObj = CreatureLookup[key];
             creatureObj.name = key;
             return creatureObj;
         }
@@ -334,7 +339,7 @@ function getSurvivor(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseInt(value.data) >= achievementPointRequirements.survivor;
+    value.completed = parseInt(value.data) >= AchievementPointRequirements.survivor;
 
     return value;
 }
@@ -344,7 +349,7 @@ function getHunter(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseInt(value.data) >= achievementPointRequirements.hunter;
+    value.completed = parseInt(value.data) >= AchievementPointRequirements.hunter;
 
     return value;
 }
@@ -354,7 +359,7 @@ function getSaint(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseInt(value.data) >= achievementPointRequirements.saint;
+    value.completed = parseInt(value.data) >= AchievementPointRequirements.saint;
 
     return value;
 }
@@ -371,7 +376,7 @@ function getWanderer(txt) {
     value.visited = _getPlacesArray(dataArray);
     value.notVisited = _getPlacesArray(_reverseDataArray(dataArray));
 
-    value.completed = value.visited.length >= achievementPointRequirements.traveller;
+    value.completed = value.visited.length >= AchievementPointRequirements.traveller;
 
     return value;
 }
@@ -381,7 +386,7 @@ function getChieftain(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseFloat(value.data) >= achievementPointRequirements.chieftain;
+    value.completed = parseFloat(value.data) >= AchievementPointRequirements.chieftain;
 
     return value;
 }
@@ -391,7 +396,7 @@ function getMonk(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseInt(value.data) >= achievementPointRequirements.monk;
+    value.completed = parseInt(value.data) >= AchievementPointRequirements.monk;
 
     return value;
 }
@@ -401,7 +406,7 @@ function getOutlaw(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseInt(value.data) >= achievementPointRequirements.outlaw;
+    value.completed = parseInt(value.data) >= AchievementPointRequirements.outlaw;
 
     return value;
 }
@@ -421,7 +426,7 @@ function getDragonSlayer(txt) {
     value.lizardsLeft = _getLizardsArray(_reverseDataArray(dataArray));
 
 
-    value.completed = value.lizardsKilled.length >= achievementPointRequirements.dragonSlayer;
+    value.completed = value.lizardsKilled.length >= AchievementPointRequirements.dragonSlayer;
 
     return value;
 }
@@ -432,7 +437,7 @@ function getScholar(txt) {
     if(Object.keys(value).length === 0) return null;
 
     value.data = value.data.split(".").map(el => parseInt(el));
-    value.completed = value.data.length >= achievementPointRequirements.scholar;
+    value.completed = value.data.length >= AchievementPointRequirements.scholar;
 
     return value;
 }
@@ -442,7 +447,7 @@ function getFriend(txt) {
     if(value == null) return null;
     if(Object.keys(value).length === 0) return null;
 
-    value.completed = parseFloat(value.data) >= achievementPointRequirements.friend;
+    value.completed = parseFloat(value.data) >= AchievementPointRequirements.friend;
 
     return value;
 }
@@ -556,7 +561,7 @@ function layoutData(data) {
         const divs = document.querySelectorAll("[data-region]");
         for(let i = 0; i < divs.length; i++) {
             const regDiv = divs[i];
-            const fullName = getKeyByValue(regionLookup, regDiv.dataset.region);
+            const fullName = getKeyByValue(RegionLookup, regDiv.dataset.region);
             console.log(fullName);
             if(wanderer.visited.indexOf(fullName) != -1) regDiv.classList.add("unlocked");
             else regDiv.classList.remove("unlocked");
@@ -571,44 +576,44 @@ function layoutData(data) {
     if(survivor != null) {
         //unhide others
         document.querySelector(".survivor-hidden").classList.remove("hide");
-        setupPipAchievement("survivor", achievementPointRequirements.survivor, survivor, true);
+        setupPipAchievement("survivor", AchievementPointRequirements.survivor, survivor, true);
     }
     //wanderer
     if(wanderer != null) {
-        setupPipAchievement("wanderer", achievementPointRequirements.traveller, wanderer);
+        setupPipAchievement("wanderer", AchievementPointRequirements.traveller, wanderer);
     }
     //scholar
     if(scholar != null) {
         console.log(scholar);
-        setupPipAchievement("scholar", achievementPointRequirements.scholar, scholar);
+        setupPipAchievement("scholar", AchievementPointRequirements.scholar, scholar);
     }    
     //outlaw
     if(outlaw != null) {
-       setupIntAchievement("outlaw", achievementPointRequirements.outlaw, outlaw);
+       setupIntAchievement("outlaw", AchievementPointRequirements.outlaw, outlaw);
     }
     //hunter
     if(hunter != null) {
-        setupIntAchievement("hunter", achievementPointRequirements.hunter, hunter);
+        setupIntAchievement("hunter", AchievementPointRequirements.hunter, hunter);
     }
     //friend
     if(friend != null) {
-        setupFloatAchievement("friend", achievementPointRequirements.friend, friend);
+        setupFloatAchievement("friend", AchievementPointRequirements.friend, friend);
     }
     //monk
     if(monk != null) {
-        setupIntAchievement("monk", achievementPointRequirements.monk, monk);
+        setupIntAchievement("monk", AchievementPointRequirements.monk, monk);
     }
     //chieftain
     if(chieftain != null) {
-        setupFloatAchievement("chieftain", achievementPointRequirements.chieftain, chieftain);
+        setupFloatAchievement("chieftain", AchievementPointRequirements.chieftain, chieftain);
     }
     //saint
     if(saint != null) {
-        setupIntAchievement("saint", achievementPointRequirements.saint, saint);
+        setupIntAchievement("saint", AchievementPointRequirements.saint, saint);
     }
     //dragonSlayer
     if(dragonSlayer != null) {
-       setupDragonSlayer(achievementPointRequirements.dragonSlayer, dragonSlayer);
+       setupDragonSlayer(AchievementPointRequirements.dragonSlayer, dragonSlayer);
     }
 
 
@@ -623,14 +628,14 @@ function layoutData(data) {
         // let karma = 6;
         // const cap = 9;
         //compare for column index
-        const column = karmaCapTracker[cap.toString()];
+        const column = KarmaCapTracker[cap.toString()];
         //move to proper index
         activeKarmaDiv.style.backgroundPositionX = 
-            inactiveKarmaDiv.style.backgroundPositionX = `${-column * karmaAtlasSize.width}px`;
+            inactiveKarmaDiv.style.backgroundPositionX = `${-column * KarmaAtlasSize.width}px`;
         //move dial to proper y position
         //switch the active to the current type
         console.log("KARMA: " + karma);
-        const offsetY = (karmaCap - karma) * karmaAtlasSize.height;
+        const offsetY = (karmaCap - karma) * KarmaAtlasSize.height;
         activeKarmaDiv.style.backgroundPositionY = `-${offsetY}px`;
         inactiveKarmaDiv.style.backgroundPositionY = `calc(-50% - ${offsetY + 75}px)`;
 

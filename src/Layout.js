@@ -95,6 +95,7 @@ export default class Layout {
             const inactiveKarmaDiv = document.querySelector(".karma.inactive");
             //look for a karma cap
             let cap = karmaCap || 4;
+            let currKarma = Math.min(karma, cap);
             //compare for column index
             const column = RW.KarmaCapTracker[cap.toString()];
             console.log(column);
@@ -103,7 +104,7 @@ export default class Layout {
                 inactiveKarmaDiv.style.backgroundPositionX = `${-column * RW.KarmaAtlasSize.width}px`;
             //move dial to proper y position
             //switch the active to the current type
-            const offsetY = (9 - karma) * RW.KarmaAtlasSize.height;
+            const offsetY = (9 - currKarma  ) * RW.KarmaAtlasSize.height;
             activeKarmaDiv.style.backgroundPositionY = `-${offsetY}px`;
             inactiveKarmaDiv.style.backgroundPositionY = `calc(-50% - ${offsetY + 75}px)`;
 

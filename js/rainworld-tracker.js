@@ -213,9 +213,19 @@ var Parser = function () {
     _createClass(Parser, null, [{
         key: "parse",
         value: function parse(txt) {
-            var startIndex = txt.length - txt.split("").reverse().join("").indexOf(">AviDgorp<", 10);
+            // const startIndex = txt.length - txt.split("").reverse().join("").indexOf(">AviDgorp<", 10);
+            //changed start index for hunter to SAVE STATE NUMBER 2
+            var startIndex = txt.indexOf("SAV STATE NUMBER<svB>2");
+
+            if (startIndex == -1) {
+                alert("This save file does not contain a Hunter save.  \n\nIf you believe this is incorrect, please report an issue to https://github.com/jaclynonacloud/rainworld-tracker/issues, or contact jaclynonacloud@gmail.com.");
+                return;
+            }
 
             var hunterText = txt.slice(startIndex);
+
+            console.log("HUNTER TEXT");
+            console.log(hunterText);
 
             //create save object
             var hunterData = {
@@ -1149,12 +1159,15 @@ var rainworldData = void 0;
 
 //listen for save file change
 document.getElementById("file-upload").addEventListener("change", function (e) {
+    console.log("RUN");
     //if we have a value, fetch and send
     if (e.target.files.length <= 0) return;
 
     //try to parse
     var fileReader = new FileReader();
     fileReader.onload = function (ev) {
+        console.log("FILE");
+        console.log(fileReader.result.toString());
         // console.log(fileReader.result);
         var data = _Parser2.default.parse(fileReader.result);
         _layout2.default.show(data);

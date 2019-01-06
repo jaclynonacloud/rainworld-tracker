@@ -13,12 +13,15 @@ let rainworldData;
 
 //listen for save file change
 document.getElementById("file-upload").addEventListener("change", (e) => {
+    console.log("RUN");
     //if we have a value, fetch and send
     if(e.target.files.length <= 0) return;
 
     //try to parse
     var fileReader = new FileReader();
     fileReader.onload = (ev) => {
+        console.log("FILE");
+        console.log(fileReader.result.toString());
         // console.log(fileReader.result);
         const data = Parser.parse(fileReader.result);
         Layout.show(data);

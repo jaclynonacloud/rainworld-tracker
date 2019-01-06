@@ -14,9 +14,6 @@ export default class Parser {
     
         const hunterText = txt.slice(startIndex);
 
-        console.log("HUNTER TEXT");
-        console.log(hunterText);
-
         //create save object
         const hunterData = {
             "totalTime" : getTimeFromSeconds(findDataValue("TOTTIME", hunterText)),

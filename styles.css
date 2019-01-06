@@ -196,6 +196,27 @@ header .check-toggle {
     color: white;
 }
 
+.ranking-container {
+    cursor: pointer;
+}
+.ranking-container summary {
+    outline: 0;
+    padding: 10px;
+    border: solid 1px white;
+    border-radius: 10px;
+    box-sizing: border-box;
+}
+details summary::-webkit-details-marker {
+    display: none;
+}
+.ranking {
+    width: -moz-max-content;
+    width: max-content;
+    padding: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+}
+
 
 .stats-karma {
     display: flex;

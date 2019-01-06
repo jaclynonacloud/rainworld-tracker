@@ -215,7 +215,8 @@ var Parser = function () {
         value: function parse(txt) {
             // const startIndex = txt.length - txt.split("").reverse().join("").indexOf(">AviDgorp<", 10);
             //changed start index for hunter to SAVE STATE NUMBER 2
-            var startIndex = txt.indexOf("SAV STATE NUMBER<svB>2");
+            // const startIndex = txt.indexOf("SAV STATE NUMBER<svB>2");
+            var startIndex = txt.indexOf("SAVE STATE");
 
             if (startIndex == -1) {
                 alert("This save file does not contain a Hunter save.  \n\nIf you believe this is incorrect, please report an issue to https://github.com/jaclynonacloud/rainworld-tracker/issues, or contact jaclynonacloud@gmail.com.");
@@ -267,7 +268,9 @@ exports.default = Parser;
 function findDataValue(id, txt) {
     var tag = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
 
-    var startIndex = txt.indexOf(">" + id + "<") + id.length;
+    var findIndex = txt.indexOf(">" + id + "<");
+    if (findIndex == -1) return "";
+    var startIndex = +findIndex + id.length;
     if (startIndex == -1) return "";
     if (tag != "") startIndex = txt.indexOf(tag, startIndex);
     var valueIndex = txt.indexOf(">", startIndex) + 1;

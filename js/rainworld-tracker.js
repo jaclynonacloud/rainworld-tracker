@@ -216,7 +216,7 @@ var Parser = function () {
             // const startIndex = txt.length - txt.split("").reverse().join("").indexOf(">AviDgorp<", 10);
             //changed start index for hunter to SAVE STATE NUMBER 2
             // const startIndex = txt.indexOf("SAV STATE NUMBER<svB>2");
-            var startIndex = txt.indexOf("SAVE STATE");
+            var startIndex = txt.lastIndexOf("SAVE STATE");
 
             if (startIndex == -1) {
                 alert("This save file does not contain a Hunter save.  \n\nIf you believe this is incorrect, please report an issue to https://github.com/jaclynonacloud/rainworld-tracker/issues, or contact jaclynonacloud@gmail.com.");

@@ -224,9 +224,6 @@ var Parser = function () {
 
             var hunterText = txt.slice(startIndex);
 
-            console.log("HUNTER TEXT");
-            console.log(hunterText);
-
             //create save object
             var hunterData = {
                 "totalTime": getTimeFromSeconds(findDataValue("TOTTIME", hunterText)),
@@ -1152,6 +1149,9 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+// import { ipcRenderer } from 'electron';
+
+
 new _Log2.default();
 new _Score2.default();
 
@@ -1159,6 +1159,9 @@ var rainworldData = void 0;
 
 //listen for save file change
 document.getElementById("file-upload").addEventListener("change", function (e) {
+
+    // ipcRenderer.send('fileUpload', e.target.files[0]);
+
     console.log("RUN");
     //if we have a value, fetch and send
     if (e.target.files.length <= 0) return;
@@ -1166,13 +1169,10 @@ document.getElementById("file-upload").addEventListener("change", function (e) {
     //try to parse
     var fileReader = new FileReader();
     fileReader.onload = function (ev) {
-        console.log("FILE");
-        console.log(fileReader.result.toString());
         // console.log(fileReader.result);
         var data = _Parser2.default.parse(fileReader.result);
         _layout2.default.show(data);
         rainworldData = data;
-        console.log(data);
 
         //set the name in the text
         document.querySelector(".file-input .name").innerHTML = e.target.files[0].name;

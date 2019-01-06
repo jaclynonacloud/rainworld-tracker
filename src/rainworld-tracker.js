@@ -38,20 +38,6 @@ document.getElementById("file-upload").addEventListener("change", (e) => {
 document.querySelector(".btn-calculate").addEventListener("click", () => {
     Score.show(rainworldData);
 });
-document.querySelector(".btn-sample").addEventListener("click", () => {
-    //show sample file
-    fetch('sav-comp.txt')
-    .then(function(blob) {
-        return blob.text();
-    })
-    .then(function(txt) {
-        //parse out hunter data
-        const data = Parser.parse(txt);
-        rainworldData = data;
-        Layout.show(data);
-    });
-});
-
 
 
 

@@ -98,7 +98,6 @@ export default class Layout {
             let currKarma = Math.min(karma, cap);
             //compare for column index
             const column = RW.KarmaCapTracker[cap.toString()];
-            console.log(column);
             //move to proper index
             activeKarmaDiv.style.backgroundPositionX = 
                 inactiveKarmaDiv.style.backgroundPositionX = `${-column * RW.KarmaAtlasSize.width}px`;

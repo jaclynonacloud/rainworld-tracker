@@ -4,12 +4,6 @@ let path = "";
 let canWatch = false;
 
 
-const watchEvent = (curr) => {
-    //fake change
-    let changeEvent = new Event("change");
-    document.getElementById("file-upload").dispatchEvent(changeEvent);
-};
-
 
 //listen for watch toggle
 document.getElementById("watch-toggle").addEventListener("change", e => {
@@ -17,12 +11,12 @@ document.getElementById("watch-toggle").addEventListener("change", e => {
 
     //watch or unwatch
     if(canWatch) {
-        watchPath(path, watchEvent);
+        watchPath(path);
         //fake change
         let changeEvent = new Event("change");
         document.getElementById("file-upload").dispatchEvent(changeEvent);
     }
-    else unwatchPath(path, watchEvent);
+    else unwatchPath();
 });
 
 //listen for save file change
@@ -33,19 +27,26 @@ document.getElementById("file-upload").addEventListener("change", (e) => {
 
 
     path = e.target.files[0].path;
-    if(canWatch)watchPath(p, watchEvent);
+    if(canWatch)watchPath(path);
     
 });
 
 
-function watchPath(p, event) {
-    if(p == "") return;
+function watchPath() {
+    if(path == "") return;
 
-    fs.watchFile(path, event);
+    //try to unwatch before watching
+    fs.unwatchFile(path);
+
+    fs.watchFile(path, (curr) => {
+        //fake change
+        let changeEvent = new Event("change");
+        document.getElementById("file-upload").dispatchEvent(changeEvent);
+    });
 
 }
-function unwatchPath(p, event) {
-    if(p == "") return;
+function unwatchPath() {
+    if(path == "") return;
 
-    fs.unwatchFile(p, event);
+    fs.unwatchFile(path);
 }

@@ -1,6 +1,10 @@
 directories:
   output: dist
   buildResources: build
+productName: Rain World Tracker
+win:
+  target:
+    - portable
 appId: com.jaclynonacloud.rainworldtracker
 mac:
   category: tracker

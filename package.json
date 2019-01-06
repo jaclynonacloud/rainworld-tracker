@@ -4,6 +4,10 @@
   "description": "A tracking application to help de-mystify the hunter save file.",
   "main": "js/background.js",
   "build": {
+    "productName": "Rain World Tracker",
+    "win": {
+      "target": ["portable"]
+    },
     "appId": "com.jaclynonacloud.rainworldtracker",
     "mac": {
       "category": "tracker"
@@ -12,7 +16,8 @@
   "scripts": {
     "start": "electron .",
     "pack": "electron-builder --dir",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "gh-publish": "electron-builder -p always"
   },
   "postinstall": "electron-builder install-app-deps",
   "devDependencies": {
@@ -21,6 +26,7 @@
     "browserify": "^12.0.2",
     "electron": "^4.0.1",
     "electron-builder": "^20.38.4",
+    "electron-updater": "^4.0.6",
     "gulp": "^3.9.1",
     "gulp-concat": "^2.6.0",
     "gulp-sourcemaps": "^2.6.0",
@@ -29,7 +35,7 @@
     "vinyl-source-stream": "^1.1.0"
   },
   "dependencies": {
-    "babel-core": "^6.1.21",    
+    "babel-core": "^6.1.21",
     "electron-cli": "^0.2.8"
   },
   "browserify": {

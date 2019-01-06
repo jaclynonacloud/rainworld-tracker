@@ -1,0 +1,7 @@
+directories:
+  output: dist
+  buildResources: build
+appId: com.jaclynonacloud.rainworldtracker
+mac:
+  category: tracker
+electronVersion: 4.0.1

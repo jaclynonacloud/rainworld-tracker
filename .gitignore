@@ -1,5 +1,6 @@
 node_modules
 package-lock.json
+yarn.lock
 js/rainworld-tracker.js.map
 testing/
 testing/*

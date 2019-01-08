@@ -4,3 +4,5 @@ yarn.lock
 js/rainworld-tracker.js.map
 testing/
 testing/*
+dist/
+dist/*

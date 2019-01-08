@@ -29,6 +29,7 @@ document.getElementById("file-upload").addEventListener("change", (e) => {
 
         //set preview
         document.getElementById("rank-preview").innerHTML = Log.compute(rainworldData);
+        document.getElementById("kills-preview").innerHTML = Log.getKillsScore(rainworldData);
     };
     fileReader.readAsText(e.target.files[0]);
 });
@@ -49,6 +50,10 @@ document.querySelector(".btn-sample").addEventListener("click", () => {
         const data = Parser.parse(txt);
         rainworldData = data;
         Layout.show(data);
+
+        //set preview
+        document.getElementById("rank-preview").innerHTML = Log.compute(rainworldData);
+        document.getElementById("kills-preview").innerHTML = Log.getKillsScore(rainworldData);
     });
 });
 

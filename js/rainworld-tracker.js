@@ -97,6 +97,18 @@ var Log = function () {
             return Log.score;
         }
     }, {
+        key: "getKillsScore",
+        value: function getKillsScore(data) {
+            var score = 0;
+            if (data.kills != null) {
+                for (var i = 0; i < data.kills.length; i++) {
+                    var killItemData = data.kills[i];
+                    score += killItemData.kills * killItemData.score;
+                }
+            }
+            return score;
+        }
+    }, {
         key: "addRankItem",
         value: function addRankItem(name, amount) {
             var value = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
@@ -1175,6 +1187,7 @@ document.getElementById("file-upload").addEventListener("change", function (e) {
 
         //set preview
         document.getElementById("rank-preview").innerHTML = _Log2.default.compute(rainworldData);
+        document.getElementById("kills-preview").innerHTML = _Log2.default.getKillsScore(rainworldData);
     };
     fileReader.readAsText(e.target.files[0]);
 });
@@ -1191,6 +1204,10 @@ document.querySelector(".btn-sample").addEventListener("click", function () {
         var data = _Parser2.default.parse(txt);
         rainworldData = data;
         _layout2.default.show(data);
+
+        //set preview
+        document.getElementById("rank-preview").innerHTML = _Log2.default.compute(rainworldData);
+        document.getElementById("kills-preview").innerHTML = _Log2.default.getKillsScore(rainworldData);
     });
 });
 

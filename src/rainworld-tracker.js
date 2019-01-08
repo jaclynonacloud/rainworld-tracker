@@ -29,6 +29,7 @@ document.getElementById("file-upload").addEventListener("change", (e) => {
 
         //set preview
         document.getElementById("rank-preview").innerHTML = Log.compute(rainworldData);
+        document.getElementById("kills-preview").innerHTML = Log.getKillsScore(rainworldData);
     };
     fileReader.readAsText(e.target.files[0]);
 });

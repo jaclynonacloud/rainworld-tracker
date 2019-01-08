@@ -77,6 +77,17 @@ export default class Log {
         return Log.score;
     }
 
+    static getKillsScore(data) {
+        let score = 0;
+        if(data.kills != null) {
+            for(let i = 0 ; i < data.kills.length; i++) {
+                const killItemData = data.kills[i];
+                score += killItemData.kills * killItemData.score;
+            }
+        }
+        return score;
+    }
+
     static addRankItem(name, amount, value=0, handfeedScore=0, isMultiplier=false) {
         const score = (handfeedScore != 0) ? handfeedScore : amount * value;
         //get div

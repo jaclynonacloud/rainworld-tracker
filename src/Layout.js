@@ -129,6 +129,7 @@ export default class Layout {
                 killDiv.querySelector(".kill-amount").innerHTML = killData.kills;
                 killDiv.querySelector(".kill-worth").innerHTML = `x${killData.score}`;
 
+                
                 //get the icon
                 const position = RW.SpriteAtlasIndex[killData.key];
 

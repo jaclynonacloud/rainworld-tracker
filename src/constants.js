@@ -142,7 +142,8 @@ const SpriteAtlasIndex = Object.freeze({
     "BigNeedleWorm" : {x:3,y:5},
     "JetFish" : {x:4,y:5},
     "Deer" : {x:5,y:5},
-    "Overseer" : {x:4,y:0}
+    "Overseer" : {x:4,y:0},
+    "Hazer"  : {x:0, y:6}
 });
 
 

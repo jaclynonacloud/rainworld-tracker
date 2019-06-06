@@ -1,12 +1,14 @@
 {
   "name": "rainworld-tracker",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A tracking application to help de-mystify the hunter save file.",
   "main": "js/background.js",
   "build": {
     "productName": "Rain World Tracker",
     "win": {
-      "target": ["portable"]
+      "target": [
+        "portable"
+      ]
     },
     "appId": "com.jaclynonacloud.rainworldtracker",
     "mac": {

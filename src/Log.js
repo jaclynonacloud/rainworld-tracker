@@ -23,7 +23,7 @@ export default class Log {
         //food
         Log.addRankItem("Food", data.totalFood || 0, 1);
         //successful cycles
-        Log.addRankItem("Successful cycles", data.cycles || 0, 10);
+        Log.addRankItem("Successful cycles", data.survives || 0, 10);
         //deaths
         Log.addRankItem("Deaths", data.deaths || 0, -3);
         //quits

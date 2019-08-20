@@ -66,6 +66,7 @@ const CreatureLookup = Object.freeze({
 });
 
 
+// found in WinState under CreateAndAddTracker
 const AchievementPointRequirements = Object.freeze({
     "survivor" : 5,
     "hunter": 12,
@@ -76,7 +77,7 @@ const AchievementPointRequirements = Object.freeze({
     "outlaw" : 7,
     "dragonSlayer": 6,
     "scholar" : 3,
-    "friend" : 12,
+    "friend" : 1,
 });
 
 

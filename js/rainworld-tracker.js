@@ -264,7 +264,7 @@ var Parser = function () {
                 "outlaw": getOutlaw(hunterText),
                 "dragonSlayer": getDragonSlayer(hunterText),
                 "scholar": getScholar(hunterText),
-                "friend": findAchievementValue("Friend", hunterText)
+                "friend": getFriend(hunterText)
             };
 
             return hunterData;
@@ -295,17 +295,19 @@ function findAchievementValue(id, txt) {
     var achievementData = {};
     var startIndex = txt.indexOf(id);
     if (startIndex == -1) return null;
+    //first value identifies whether this achievement has been consumed
     startIndex = txt.indexOf("egA", startIndex);
     var valueIndex = txt.indexOf(">", startIndex) + 1;
     var valueIndexEnd = txt.indexOf("<", valueIndex);
-    achievementData.addIfMissing = txt.slice(valueIndex, valueIndexEnd);
+    achievementData.consumed = txt.slice(valueIndex, valueIndexEnd);
     //reuse for second val
     valueIndex = txt.indexOf(">", valueIndexEnd) + 1;
     valueIndexEnd = txt.indexOf("<", valueIndex);
     achievementData.data = txt.slice(valueIndex, valueIndexEnd);
 
-    //not sure what to do with this flag?
-    delete achievementData.addIfMissing;
+    console.log(id, achievementData);
+
+    // delete achievementData.consumed;
 
     return achievementData;
 }
@@ -722,6 +724,7 @@ var CreatureLookup = Object.freeze({
     "Overseer": { name: "Overseer", id: 37, score: 2 //??
     } });
 
+// found in WinState under CreateAndAddTracker
 var AchievementPointRequirements = Object.freeze({
     "survivor": 5,
     "hunter": 12,
@@ -732,7 +735,7 @@ var AchievementPointRequirements = Object.freeze({
     "outlaw": 7,
     "dragonSlayer": 6,
     "scholar": 3,
-    "friend": 12
+    "friend": 1
 });
 
 var KarmaAtlasSize = Object.freeze({

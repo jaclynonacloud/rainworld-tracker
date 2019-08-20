@@ -42,7 +42,7 @@ export default class Parser {
             "outlaw" : getOutlaw(hunterText),
             "dragonSlayer" : getDragonSlayer(hunterText),
             "scholar" : getScholar(hunterText),
-            "friend" : findAchievementValue("Friend", hunterText),
+            "friend" : getFriend(hunterText),
         };
 
         return hunterData;
@@ -66,17 +66,20 @@ function findAchievementValue(id, txt) {
     let achievementData = {};
     let startIndex = txt.indexOf(id);
     if(startIndex == -1) return null;
+    //first value identifies whether this achievement has been consumed
     startIndex = txt.indexOf("egA", startIndex);
     let valueIndex = txt.indexOf(">", startIndex) + 1;
     let valueIndexEnd = txt.indexOf("<", valueIndex);
-    achievementData.addIfMissing = txt.slice(valueIndex, valueIndexEnd);
+    achievementData.consumed = txt.slice(valueIndex, valueIndexEnd);
     //reuse for second val
     valueIndex = txt.indexOf(">", valueIndexEnd) + 1;
     valueIndexEnd = txt.indexOf("<", valueIndex);
     achievementData.data = txt.slice(valueIndex, valueIndexEnd);
 
-    //not sure what to do with this flag?
-    delete achievementData.addIfMissing;
+    console.log(id, achievementData);
+
+    
+    // delete achievementData.consumed;
 
     return achievementData;
 }

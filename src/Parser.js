@@ -76,11 +76,6 @@ function findAchievementValue(id, txt) {
     valueIndexEnd = txt.indexOf("<", valueIndex);
     achievementData.data = txt.slice(valueIndex, valueIndexEnd);
 
-    console.log(id, achievementData);
-
-    
-    // delete achievementData.consumed;
-
     return achievementData;
 }
 

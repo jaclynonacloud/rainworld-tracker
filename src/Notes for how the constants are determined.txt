@@ -1,0 +1,17 @@
+Talking about the game code for how the score is calculated... it works in a strange, strange way
+
+In, StoryGameStatisticsScreen
+Line 158 is where the kills are included
+
+The values for the creatures are tied to the sandbox unlock symbols
+
+Looking at MultiplayerUnlocks.SandboxUnlockForSymbolData
+Can see the source of the bug for the centipede scores here...
+
+From here, MultiplayerUnlocks.SandboxUnlockID is used with ParseEnum to do the rest.
+CreatureTemplate.Type produces a string -> used as a key for MultiplayerUnlocks.SandboxUnlockID
+
+It is done this way because Rain World developers...
+
+Finally, SandboxSettingsInterface.DefaultKillScores has the scores
+These are matched against the MultiplayerUnlocks and not the Creature types

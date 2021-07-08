@@ -42,7 +42,7 @@ const CreatureLookup = Object.freeze({
     "Vulture" : {name:"Vulture", id:16, score:15},
     "KingVulture" : {name:"King Vulture", id:45, score:25},
     // "SmallCentipede" : {name:"Small Centipede", id:321, score:4},  //added their variant to the ID
-    "SmallCentipede" : {name:"Small Centipede", id:322, score:4},  //added their variant to the ID
+    "SmallCentipede" : {name:"Small Centipede", id:322, score:7},  //added their variant to the ID
     // "Centipede" : {name:"Centipede", id:322, score:7},
     "Centipede" : {name:"Centipede", id:321, score:7},
     "LargeCentipede" : {name:"Large Centipede", id:323, score:7},
@@ -56,13 +56,13 @@ const CreatureLookup = Object.freeze({
     "MirosBird" : {name:"Scissorbird", id:30, score:16},
     "BrotherLongLegs" : {name:"Brother Long Legs", id:27, score:14},
     "DaddyLongLegs" : {name:"Daddy Long Legs", id:26, score:25},
-    "Deer" : {name:"Raindeer", id:24, score:10}, //??Doesn't have a score?
+    "Deer" : {name:"Raindeer", id:24, score:1},
     "EggBug" : {name:"Egg Bug", id:39, score:2},
     "DropBug" : {name:"Dropwig", id:44, score:5},
     "BigNeedleWorm" : {name:"Noodlefly", id:43, score:5},
     "JetFish" : {name:"Jet Fish", id:22, score:4},
     "Leviathan" : {name:"Leviathan", id:23, score:25},
-    "Overseer" : {name:"Overseer", id:37, score:2}, //??
+    "Overseer" : {name:"Overseer", id:37, score:1},
 });
 
 

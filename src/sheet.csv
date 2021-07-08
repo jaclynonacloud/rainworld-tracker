@@ -1,0 +1,60 @@
+﻿ID index,ID string,Score by Creature,,Scores…,Scores Raw,,
+0,Slugcat,5,,,killScores[0] = 5;,0,5
+1,GreenLizard,10,,,killScores[1] = 10;,1,10
+2,PinkLizard,7,,,killScores[2] = 7;,2,7
+3,BlueLizard,6,,,killScores[3] = 6;,3,6
+4,WhiteLizard,8,,,killScores[4] = 8;,4,8
+5,BlackLizard,7,,,killScores[5] = 7;,5,7
+6,YellowLizard,6,,,killScores[6] = 6;,6,6
+7,CyanLizard,9,,,killScores[7] = 9;,7,9
+8,RedLizard,25,,,killScores[8] = 25;,8,25
+9,Salamander,7,,,killScores[9] = 7;,9,7
+10,Fly,1,,,killScores[11] = 2;,11,2
+11,CicadaA,2,,,killScores[12] = 2;,12,2
+12,CicadaB,2,,,killScores[13] = 1;,13,1
+13,Snail,1,,,killScores[16] = 2;,16,2
+14,Leech,1,,,killScores[17] = 7;,17,7
+15,SeaLeech,1,,,killScores[18] = 6;,18,6
+16,PoleMimic,2,,,killScores[20] = 15;,20,15
+17,TentaclePlant,7,,,killScores[21] = 25;,21,25
+18,Scavenger,6,,,killScores[23] = 4;,23,4
+19,VultureGrub,1,,,killScores[24] = 7;,24,7
+20,Vulture,15,,,killScores[25] = 19;,25,19
+21,KingVulture,25,,,killScores[26] = 5;,26,5
+22,SmallCentipede,7,,,killScores[29] = 2;,29,2
+23,MediumCentipede,4,,,killScores[31] = 4;,31,4
+24,BigCentipede,7,,,killScores[32] = 5;,32,5
+25,RedCentipede,19,,,killScores[33] = 16;,33,16
+26,Centiwing,5,,,killScores[34] = 14;,34,14
+27,TubeWorm,1,,,killScores[35] = 25;,35,25
+28,Hazer,1,,,killScores[27] = 1;,27,1
+29,LanternMouse,2,,,killScores[37] = 2;,37,2
+30,Spider,1,,,killScores[38] = 5;,38,5
+31,BigSpider,4,,,killScores[39] = 5;,39,5
+32,SpitterSpider,5,,,killScores[41] = 4;,41,4
+33,MirosBird,16,,,killScores[42] = 25;,42,25
+34,BrotherLongLegs,14,,,,,
+35,DaddyLongLegs,25,,,,,
+36,Deer,1,,,,,
+37,EggBug,2,,,,,
+38,DropBug,5,,,,,
+39,BigNeedleWorm,5,,,,,
+40,SmallNeedleWorm,1,,,,,
+41,Jetfish,4,,,,,
+42,BigEel,25,,,,,
+43,Rock,1,,,,,
+44,Spear,1,,,,,
+45,FireSpear,1,,,,,
+46,ScavengerBomb,1,,,,,
+47,SporePlant,1,,,,,
+48,Lantern,1,,,,,
+49,FlyLure,1,,,,,
+50,Mushroom,1,,,,,
+51,FlareBomb,1,,,,,
+52,PuffBall,1,,,,,
+53,WaterNut,1,,,,,
+54,FirecrackerPlant,1,,,,,
+55,DangleFruit,1,,,,,
+56,JellyFish,1,,,,,
+57,BubbleGrass,1,,,,,
+58,SlimeMold,1,,,,,

@@ -1,1222 +1,136 @@
-(function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _constants = require("./constants");
-
-var RW = _interopRequireWildcard(_constants);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Log = function () {
-    function Log() {
-        _classCallCheck(this, Log);
-
-        Log.rankItems = [];
-        Log.score = 0;
-        Log.multiplier = 1;
-
-        document.querySelector(".log .btn-close").addEventListener("click", function () {
-            Log.hide();
-        });
-    }
-
-    _createClass(Log, null, [{
-        key: "show",
-        value: function show(data) {
-            document.querySelector(".log").classList.remove("hide");
-            Log.compute(data);
-        }
-    }, {
-        key: "hide",
-        value: function hide() {
-            document.querySelector(".log").classList.add("hide");
-        }
-    }, {
-        key: "compute",
-        value: function compute(data) {
-            Log.clear();
-            //calculate the data
-            //food
-            Log.addRankItem("Food", data.totalFood || 0, 1);
-            //successful cycles
-            Log.addRankItem("Successful cycles", data.survives || 0, 10);
-            //deaths
-            Log.addRankItem("Deaths", data.deaths || 0, -3);
-            //quits
-            Log.addRankItem("Quits", data.quits || 0, -3);
-            //time
-            Log.addRankItem("Time", data.totalTimeRaw, -1, data.totalTimeRaw != null ? -(data.totalTimeRaw / 60) : 0);
-            //delivered payload
-            if (data.deliveredPayload) Log.addRankItem("Delivered Payload", data.deliveredPayload ? 100 : 0, 1);
-            //helped pebbles
-            if (data.helpedPebbles) Log.addRankItem("Helped Five Pebbles", data.helpedPebbles ? 40 : 0, 1);
-            //ascended
-            if (data.ascended) Log.addRankItem("Ascended", data.ascended ? 300 : 0, 1);
-            Log._computeScore();
-
-            //show total before creatures
-            Log.addTotalItem(Log.getTotalScore());
-
-            //creatures
-            if (data.kills != null) {
-                for (var i = 0; i < data.kills.length; i++) {
-                    var killItemData = data.kills[i];
-                    Log.addRankItem(killItemData.name + " kill(s)", killItemData.kills, killItemData.score);
-                }
-            }
-            Log._computeScore();
-            //show total before multiplier
-            Log.addTotalItem(Log.getTotalScore());
-
-            //achievements
-            var score = Log.getTotalScore();
-            var multiplier = 1;
-            var _arr = [data.survivor, data.wanderer, data.chieftain, data.monk, data.scholar, data.outlaw, data.dragonSlayer, data.hunter, data.friend, data.saint];
-            for (var _i = 0; _i < _arr.length; _i++) {
-                var achievement = _arr[_i];
-                if (achievement != null) {
-                    if (achievement.completed) {
-                        multiplier++;
-                        Log.addRankItem(achievement.name, multiplier, 0, score * multiplier, true);
-                    }
-                }
-            }
-
-            Log.score = score * multiplier;
-            //show total
-            Log.addTotalItem(Log.score);
-
-            return Log.score;
-        }
-    }, {
-        key: "getKillsScore",
-        value: function getKillsScore(data) {
-            var score = 0;
-            if (data.kills != null) {
-                for (var i = 0; i < data.kills.length; i++) {
-                    var killItemData = data.kills[i];
-                    score += killItemData.kills * killItemData.score;
-                }
-            }
-            return score;
-        }
-    }, {
-        key: "addRankItem",
-        value: function addRankItem(name, amount) {
-            var value = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
-            var handfeedScore = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
-            var isMultiplier = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : false;
-
-            var score = handfeedScore != 0 ? handfeedScore : amount * value;
-            //get div
-            var div = RW.LogItemTemplate.cloneNode(true);
-            var titleDiv = div.querySelector(".title");
-            var amountDiv = div.querySelector(".amount");
-            var valueDiv = div.querySelector(".value");
-            var totalDiv = div.querySelector(".total");
-            titleDiv.innerHTML = name;
-            amountDiv.innerHTML = amount == "" ? "" : "x " + amount;
-            if (value != 0) valueDiv.innerHTML = "@ " + value;
-            totalDiv.innerHTML = Math.floor(score);
-
-            //check for negative scores
-            if (valueDiv.innerHTML.indexOf("-") != -1) valueDiv.classList.add("negative");
-            if (totalDiv.innerHTML.indexOf("-") != -1) totalDiv.classList.add("negative");
-
-            //push into container
-            document.querySelector(".log .log-list").appendChild(div);
-
-            if (!isMultiplier) Log.rankItems.push({ name: name, score: score });else Log.multiplier++;
-        }
-    }, {
-        key: "addTotalItem",
-        value: function addTotalItem(score) {
-            var div = RW.LogItemTotalTemplate.cloneNode(true);
-            div.querySelector(".total").innerHTML = score;
-
-            //push into container
-            document.querySelector(".log .log-list").appendChild(div);
-        }
-    }, {
-        key: "getTotalScore",
-        value: function getTotalScore() {
-            var score = 0;
-            var _iteratorNormalCompletion = true;
-            var _didIteratorError = false;
-            var _iteratorError = undefined;
-
-            try {
-                for (var _iterator = Log.rankItems[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                    var item = _step.value;
-                    score += parseInt(item.score);
-                }
-            } catch (err) {
-                _didIteratorError = true;
-                _iteratorError = err;
-            } finally {
-                try {
-                    if (!_iteratorNormalCompletion && _iterator.return) {
-                        _iterator.return();
-                    }
-                } finally {
-                    if (_didIteratorError) {
-                        throw _iteratorError;
-                    }
-                }
-            }
-
-            return score;
-        }
-    }, {
-        key: "getFinalScore",
-        value: function getFinalScore() {
-            return Log.score;
-        }
-    }, {
-        key: "_computeScore",
-        value: function _computeScore() {
-            Log.score += Log.getTotalScore();
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            Log.rankItems = [];
-            Log.score = 0;
-            Log.multiplier = 1;
-            document.querySelector(".log .log-list").innerHTML = "";
-        }
-    }]);
-
-    return Log;
-}();
-
-exports.default = Log;
-
-},{"./constants":4}],2:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _constants = require("./constants");
-
-var RW = _interopRequireWildcard(_constants);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Parser = function () {
-    function Parser() {
-        _classCallCheck(this, Parser);
-    }
-
-    _createClass(Parser, null, [{
-        key: "parse",
-        value: function parse(txt) {
-            // const startIndex = txt.length - txt.split("").reverse().join("").indexOf(">AviDgorp<", 10);
-            //changed start index for hunter to SAVE STATE NUMBER 2
-            // const startIndex = txt.indexOf("SAV STATE NUMBER<svB>2");
-            var startIndex = txt.lastIndexOf("SAVE STATE");
-
-            if (startIndex == -1) {
-                alert("This save file does not contain a Hunter save.  \n\nIf you believe this is incorrect, please report an issue to https://github.com/jaclynonacloud/rainworld-tracker/issues, or contact jaclynonacloud@gmail.com.");
-                return;
-            }
-
-            var hunterText = txt.slice(startIndex);
-
-            //create save object
-            var hunterData = {
-                "totalTime": getTimeFromSeconds(findDataValue("TOTTIME", hunterText)),
-                "totalTimeRaw": findDataValue("TOTTIME", hunterText),
-                "cycles": findDataValue("CURRVERCYCLES", hunterText),
-                "totalFood": findDataValue("TOTFOOD", hunterText),
-                "survives": findDataValue("SURVIVES", hunterText),
-                "deaths": findDataValue("DEATHS", hunterText),
-                "quits": findDataValue("QUITS", hunterText),
-                "karma": findDataValue("KARMA", hunterText),
-                "karmaCap": findDataValue("KARMACAP", hunterText),
-                "helpedPebbles": findDataExists("PEBBLESHELPED", hunterText),
-                "deliveredPayload": findDataExists("MOONREVIVED", hunterText),
-                "ascended": findDataExists("ASCENDED", hunterText),
-                "swallowedItem": findDataValue("SWALLOWEDITEMS", hunterText, "oA"),
-                "extraCycles": findDataExists("REDEXTRACYCLES", hunterText),
-                "kills": findKillValue(hunterText),
-                //achievements
-                "survivor": getSurvivor(hunterText),
-                "hunter": getHunter(hunterText),
-                "saint": getSaint(hunterText),
-                "wanderer": getWanderer(hunterText),
-                "chieftain": getChieftain(hunterText),
-                "monk": getMonk(hunterText),
-                "outlaw": getOutlaw(hunterText),
-                "dragonSlayer": getDragonSlayer(hunterText),
-                "scholar": getScholar(hunterText),
-                "friend": getFriend(hunterText)
-            };
-
-            return hunterData;
-        }
-    }]);
-
-    return Parser;
-}();
-
-exports.default = Parser;
-
-
-function findDataValue(id, txt) {
-    var tag = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : "";
-
-    var findIndex = txt.indexOf(">" + id + "<");
-    if (findIndex == -1) return "";
-    var startIndex = +findIndex + id.length;
-    if (startIndex == -1) return "";
-    if (tag != "") startIndex = txt.indexOf(tag, startIndex);
-    var valueIndex = txt.indexOf(">", startIndex) + 1;
-    var valueIndexEnd = txt.indexOf("<", valueIndex);
-
-    return txt.slice(valueIndex, valueIndexEnd);
-}
-
-function findAchievementValue(id, txt) {
-    var achievementData = {};
-    var startIndex = txt.indexOf(id);
-    if (startIndex == -1) return null;
-    //first value identifies whether this achievement has been consumed
-    startIndex = txt.indexOf("egA", startIndex);
-    var valueIndex = txt.indexOf(">", startIndex) + 1;
-    var valueIndexEnd = txt.indexOf("<", valueIndex);
-    achievementData.consumed = txt.slice(valueIndex, valueIndexEnd);
-    //reuse for second val
-    valueIndex = txt.indexOf(">", valueIndexEnd) + 1;
-    valueIndexEnd = txt.indexOf("<", valueIndex);
-    achievementData.data = txt.slice(valueIndex, valueIndexEnd);
-
-    console.log(id, achievementData);
-
-    // delete achievementData.consumed;
-
-    return achievementData;
-}
-
-function findKillValue(txt) {
-    var startIndex = txt.indexOf("KILLS") + 5;
-    var endIndex = txt.lastIndexOf("svD");
-    endIndex = txt.indexOf("<", endIndex);
-    //splice out text
-    var killText = txt.slice(startIndex, endIndex);
-    //array up
-    var killArray = killText.split(">");
-    killArray = killArray.map(function (el) {
-        return el.replace("<svB", "").replace("<svC", "").replace("<svD", "");
-    });
-    killArray.shift();
-
-    //decipher the data
-    var result = [];
-    for (var i = 0; i < killArray.length; i += 2) {
-        var rawID = killArray[i];
-        var amount = parseInt(killArray[i + 1]);
-        //decipher the creature type
-        var creatureID = parseInt(rawID.split("-")[0]);
-        //if the id is a 32 (freak num), check the variant as well
-        if (creatureID == 32) creatureID = parseInt("32" + rawID.split("-")[2]);
-        //go find the creature
-        var creature = _getCreatureByID(creatureID);
-        if (creature != null) {
-            creature.kills = amount;
-            result.push(creature);
-        }
-    }
-
-    return result;
-}
-
-function findDataExists(id, txt) {
-    return txt.indexOf(id) != -1;
-}
-
-function _getCreatureByID(id) {
-    var _iteratorNormalCompletion = true;
-    var _didIteratorError = false;
-    var _iteratorError = undefined;
-
-    try {
-        for (var _iterator = Object.keys(RW.CreatureLookup)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-            var key = _step.value;
-
-            if (RW.CreatureLookup[key].id == id) {
-                var creatureObj = RW.CreatureLookup[key];
-                creatureObj.key = key;
-                creatureObj.name = creatureObj.name || key;
-                return creatureObj;
-            }
-        }
-    } catch (err) {
-        _didIteratorError = true;
-        _iteratorError = err;
-    } finally {
-        try {
-            if (!_iteratorNormalCompletion && _iterator.return) {
-                _iterator.return();
-            }
-        } finally {
-            if (_didIteratorError) {
-                throw _iteratorError;
-            }
-        }
-    }
-
-    return null;
-}
-
-function getTimeFromSeconds(time) {
-    var hours = Math.floor(time / 3600);
-    var minutes = _setToTens(Math.floor(time % 3600 / 60));
-    var seconds = _setToTens(Math.floor(time % 3600 % 60));
-
-    return hours + ":" + minutes + ":" + seconds;
-}
-function _setToTens(time) {
-    if (time.toString().split("").length < 2) return "0" + time;
-    return time;
-}
-
-/*----- SPECIALIZED -----*/
-function getSurvivor(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Survivor", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseInt(value.data) >= RW.AchievementPointRequirements.survivor;
-    value.name = "The Survivor";
-
-    return value;
-}
-function getHunter(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Hunter", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseInt(value.data) >= RW.AchievementPointRequirements.hunter;
-    value.name = "The Hunter";
-
-    return value;
-}
-function getSaint(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Saint", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseInt(value.data) >= RW.AchievementPointRequirements.saint;
-    value.name = "The Saint";
-
-    return value;
-}
-function getWanderer(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Traveller", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    //interpret data
-    var dataArray = value.data.split(".");
-    value.data = dataArray.map(function (el) {
-        return el == "1" ? 1 : 0;
-    });
-    //add the places wandered to
-    value.visited = _getPlacesArray(dataArray);
-    value.notVisited = _getPlacesArray(_reverseDataArray(dataArray));
-
-    value.completed = value.visited.length >= RW.AchievementPointRequirements.traveller;
-    value.name = "The Wanderer";
-
-    return value;
-}
-function getChieftain(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Chieftain", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseFloat(value.data) >= RW.AchievementPointRequirements.chieftain;
-    value.name = "The Chieftain";
-
-    return value;
-}
-function getMonk(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Monk", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseInt(value.data) >= RW.AchievementPointRequirements.monk;
-    value.name = "The Monk";
-
-    return value;
-}
-function getOutlaw(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Outlaw", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseInt(value.data) >= RW.AchievementPointRequirements.outlaw;
-    value.name = "The Outlaw";
-
-    return value;
-}
-function getDragonSlayer(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("DragonSlayer", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    //interpret data
-    var dataArray = value.data.split(".");
-    dataArray.pop();
-    value.data = dataArray.map(function (el) {
-        return el == "1" ? 1 : 0;
-    });
-    //add the lizards killed    
-    value.lizardsKilled = _getLizardsArray(dataArray);
-    value.lizardsLeft = _getLizardsArray(_reverseDataArray(dataArray));
-
-    value.completed = value.lizardsKilled.length >= RW.AchievementPointRequirements.dragonSlayer;
-    value.name = "The Dragon Slayer";
-
-    return value;
-}
-function getScholar(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Scholar", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.data = value.data.split(".").map(function (el) {
-        return parseInt(el);
-    });
-    value.completed = value.data.length >= RW.AchievementPointRequirements.scholar;
-    value.name = "The Scholar";
-
-    return value;
-}
-function getFriend(txt) {
-    //first, see if it exists
-    var value = findAchievementValue("Friend", txt);
-    if (value == null) return null;
-    if (Object.keys(value).length === 0) return null;
-
-    value.completed = parseFloat(value.data) >= RW.AchievementPointRequirements.friend;
-    value.name = "The Friend";
-
-    return value;
-}
-
-function _reverseDataArray(dataArray) {
-    var result = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        if (dataArray[i] == "1") result.push("0");else result.push("1");
-    }return result;
-}
-
-function _getLizardsArray(dataArray) {
-    var lizardArray = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        if (dataArray[i] == "1") {
-            switch (i) {
-                case 0:
-                    lizardArray.push("green");break;
-                case 1:
-                    lizardArray.push("magenta");break;
-                case 2:
-                    lizardArray.push("blue");break;
-                case 3:
-                    lizardArray.push("white");break;
-                case 4:
-                    lizardArray.push("yellow");break;
-                case 5:
-                    lizardArray.push("black");
-            }
-        }
-    }
-    return lizardArray;
-}
-
-function _getPlacesArray(dataArray) {
-    var placesArray = [];
-    for (var i = 0; i < dataArray.length; i++) {
-        if (dataArray[i] == "1") {
-            switch (i) {
-                case 0:
-                    placesArray.push("Outskirts");break;
-                case 1:
-                    placesArray.push("Industrial Complex");break;
-                case 2:
-                    placesArray.push("Drainage System");break;
-                case 3:
-                    placesArray.push("Chimney Canopy");break;
-                case 4:
-                    placesArray.push("Garbage Wastes");break;
-                case 5:
-                    placesArray.push("Shaded Citadel");break;
-                case 6:
-                    placesArray.push("Shoreline");break;
-                case 7:
-                    placesArray.push("Sky Islands");break;
-                case 8:
-                    placesArray.push("Farm Arrays");break;
-                case 9:
-                    placesArray.push("Exterior");break;
-                case 10:
-                    placesArray.push("Five Pebbles");break;
-                case 11:
-                    placesArray.push("Subterranean");break;
-            }
-        }
-    }
-    return placesArray;
-}
-
-function _getKillsArray(dataArray) {
-    var killsArray = [];
-}
-
-},{"./constants":4}],3:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _Log = require("./Log");
-
-var _Log2 = _interopRequireDefault(_Log);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Score = function () {
-    function Score() {
-        _classCallCheck(this, Score);
-
-        Score.data = null;
-
-        document.querySelector(".current-score .btn-stats").addEventListener("click", function () {
-            if (Score.data == null) return;
-            _Log2.default.show(Score.data);
-        });
-
-        document.querySelector(".current-score .btn-close").addEventListener("click", function () {
-            Score.hide();
-        });
-    }
-
-    _createClass(Score, null, [{
-        key: "show",
-        value: function show(data) {
-            var score = data != null ? _Log2.default.compute(data) : 0;
-            document.querySelector(".current-score .score").innerHTML = score;
-            document.querySelector(".current-score").classList.remove("hide");
-            Score.data = data;
-        }
-    }, {
-        key: "hide",
-        value: function hide() {
-            Score.data = null;
-            document.querySelector(".current-score").classList.add("hide");
-        }
-    }]);
-
-    return Score;
-}();
-
-exports.default = Score;
-
-},{"./Log":1}],4:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var RegionLookup = Object.freeze({
-    "Outskirts": "os",
-    "Industrial Complex": "ic",
-    "Drainage System": "ds",
-    "Chimney Canopy": "cc",
-    "Garbage Wastes": "gw",
-    "Shaded Citadel": "sh",
-    "Shoreline": "sl",
-    "Sky Islands": "si",
-    "Farm Arrays": "fa",
-    "Exterior": "ex",
-    "Five Pebbles": "fp",
-    "Subterranean": "sb",
-    "Depths": "dp"
-});
-
-var DefaultScores = Object.freeze({
-    "Food": 1,
-    "Survival": 5
-});
-
-//scores are in SandboxSettingsInterface | IDs are in MultiplayerUnlocks - SandboxUnlockID
-//the image IDs are CreatureTemplate.Type references, however
-var CreatureLookup = Object.freeze({
-    "Slugcat": { name: "Slugcat", id: 1, score: 5 },
-    "GreenLizard": { name: "Green Lizard", id: 4, score: 10 },
-    "PinkLizard": { name: "Pink Lizard", id: 3, score: 7 },
-    "BlueLizard": { name: "Blue Lizard", id: 5, score: 6 },
-    "WhiteLizard": { name: "White Lizard", id: 7, score: 8 },
-    "BlackLizard": { name: "Black Lizard", id: 9, score: 7 },
-    "YellowLizard": { name: "Yellow Lizard", id: 6, score: 6 },
-    "CyanLizard": { name: "Cyan Lizard", id: 11, score: 9 },
-    "RedLizard": { name: "Red Lizard", id: 8, score: 25 },
-    "Salamander": { name: "salamander", id: 10, score: 7 },
-    "CicadaA": { name: "White Cicada", id: 19, score: 2 },
-    "CicadaB": { name: "Black Cicada", id: 20, score: 2 },
-    "Snail": { name: "Snail", id: 15, score: 1 },
-    "PoleMimic": { name: "Pole Plant", id: 29, score: 2 },
-    "TentaclePlant": { name: "Monster Kelp", id: 28, score: 7 },
-    "Scavenger": { name: "Scavenger", id: 36, score: 6 },
-    "Vulture": { name: "Vulture", id: 16, score: 15 },
-    "KingVulture": { name: "King Vulture", id: 45, score: 25 },
-    // "SmallCentipede" : {name:"Small Centipede", id:321, score:4},  //added their variant to the ID
-    "SmallCentipede": { name: "Small Centipede", id: 322, score: 4 }, //added their variant to the ID
-    // "Centipede" : {name:"Centipede", id:322, score:7},
-    "Centipede": { name: "Centipede", id: 321, score: 7 },
-    "LargeCentipede": { name: "Large Centipede", id: 323, score: 7 },
-    "RedCentipede": { name: "Red Centipede", id: 33, score: 19 },
-    "Centiwing": { name: "Centiwing", id: 34, score: 5 },
-    "Tubeworm": { name: "Garbage Worm", id: 25, score: 1 },
-    "Hazer": { name: "Hazer", id: 46, score: 1 },
-    "LanternMouse": { name: "Lantern Mouse", id: 18, score: 2 },
-    "BigSpider": { name: "Spider", id: 40, score: 4 },
-    "SpitterSpider": { name: "Tranq Spider", id: 41, score: 5 },
-    "MirosBird": { name: "Scissorbird", id: 30, score: 16 },
-    "BrotherLongLegs": { name: "Brother Long Legs", id: 27, score: 14 },
-    "DaddyLongLegs": { name: "Daddy Long Legs", id: 26, score: 25 },
-    "Deer": { name: "Raindeer", id: 24, score: 10 }, //??Doesn't have a score?
-    "EggBug": { name: "Egg Bug", id: 39, score: 2 },
-    "DropBug": { name: "Dropwig", id: 44, score: 5 },
-    "BigNeedleWorm": { name: "Noodlefly", id: 43, score: 5 },
-    "JetFish": { name: "Jet Fish", id: 22, score: 4 },
-    "Leviathan": { name: "Leviathan", id: 23, score: 25 },
-    "Overseer": { name: "Overseer", id: 37, score: 2 //??
-    } });
-
-// found in WinState under CreateAndAddTracker
-var AchievementPointRequirements = Object.freeze({
-    "survivor": 5,
-    "hunter": 12,
-    "saint": 12,
-    "traveller": 12,
-    "chieftain": 1,
-    "monk": 12,
-    "outlaw": 7,
-    "dragonSlayer": 6,
-    "scholar": 3,
-    "friend": 1
-});
-
-var KarmaAtlasSize = Object.freeze({
-    "width": 90,
-    "height": 90
-});
-var KarmaCapTracker = Object.freeze({
-    "9": 0,
-    "8": 1,
-    "7": 2,
-    "6": 3,
-    "5": 4,
-    "4": 4,
-    "3": 4,
-    "2": 4,
-    "1": 4,
-    "0": 4
-});
-
-//large centipede is 32-0-3
-//med is 32-0-2
-//small is 32-0-1
-
-//31*26
-var SpriteAtlasSize = Object.freeze({
-    "width": 31,
-    "height": 26
-});
-var SpriteAtlasIndex = Object.freeze({
-    "Leviathan": { x: 0, y: 0 },
-    "Slugcat": { x: 1, y: 0 },
-    "GreenLizard": { x: 2, y: 0 },
-    "PinkLizard": { x: 3, y: 0 },
-    "BlueLizard": { x: 5, y: 0 },
-    "WhiteLizard": { x: 0, y: 1 },
-    "BlackLizard": { x: 1, y: 1 },
-    "YellowLizard": { x: 2, y: 1 },
-    "CyanLizard": { x: 3, y: 1 },
-    "RedLizard": { x: 4, y: 1 },
-    "Salamander": { x: 5, y: 1 },
-    "CicadaA": { x: 0, y: 2 },
-    "CicadaB": { x: 1, y: 2 },
-    "Snail": { x: 2, y: 2 },
-    "PoleMimic": { x: 3, y: 2 },
-    "TentaclePlant": { x: 4, y: 2 },
-    "Scavenger": { x: 5, y: 2 },
-    "Vulture": { x: 0, y: 3 },
-    "KingVulture": { x: 1, y: 3 },
-    "SmallCentipede": { x: 2, y: 3 },
-    "Centipede": { x: 3, y: 3 },
-    "LargeCentipede": { x: 4, y: 3 },
-    "RedCentipede": { x: 5, y: 3 },
-    "Centiwing": { x: 0, y: 4 },
-    "LanternMouse": { x: 1, y: 4 },
-    "BigSpider": { x: 2, y: 4 },
-    "SpitterSpider": { x: 3, y: 4 },
-    "MirosBird": { x: 4, y: 4 },
-    "BrotherLongLegs": { x: 5, y: 4 },
-    "DaddyLongLegs": { x: 0, y: 5 },
-    "EggBug": { x: 1, y: 5 },
-    "DropBug": { x: 2, y: 5 },
-    "BigNeedleWorm": { x: 3, y: 5 },
-    "JetFish": { x: 4, y: 5 },
-    "Deer": { x: 5, y: 5 },
-    "Overseer": { x: 4, y: 0 },
-    "Hazer": { x: 0, y: 6 }
-});
-
-//get the creature kill template
-var CreatureKillTemplate = document.querySelector(".creature-kill");
-CreatureKillTemplate.remove();
-
-//get the log item template
-var LogItemTemplate = document.querySelector(".log-item");
-LogItemTemplate.remove();
-
-//get the total template
-var LogItemTotalTemplate = document.querySelector(".log-item.full-total");
-LogItemTotalTemplate.remove();
-
-exports.RegionLookup = RegionLookup;
-exports.DefaultScores = DefaultScores;
-exports.CreatureLookup = CreatureLookup;
-exports.AchievementPointRequirements = AchievementPointRequirements;
-exports.KarmaAtlasSize = KarmaAtlasSize;
-exports.KarmaCapTracker = KarmaCapTracker;
-exports.SpriteAtlasSize = SpriteAtlasSize;
-exports.SpriteAtlasIndex = SpriteAtlasIndex;
-exports.CreatureKillTemplate = CreatureKillTemplate;
-exports.LogItemTemplate = LogItemTemplate;
-exports.LogItemTotalTemplate = LogItemTotalTemplate;
-
-},{}],5:[function(require,module,exports){
-"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _constants = require("./constants");
-
-var RW = _interopRequireWildcard(_constants);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var Layout = function () {
-    function Layout() {
-        _classCallCheck(this, Layout);
-    }
-
-    _createClass(Layout, null, [{
-        key: "show",
-        value: function show(data) {
-            //first, clear the data
-            Layout.clear();
-            var totalTime = data.totalTime,
-                totalFood = data.totalFood,
-                cycles = data.cycles,
-                extraCycles = data.extraCycles,
-                survives = data.survives,
-                deaths = data.deaths,
-                quits = data.quits,
-                kills = data.kills,
-                swallowedItem = data.swallowedItem,
-                helpedPebbles = data.helpedPebbles,
-                deliveredPayload = data.deliveredPayload,
-                ascended = data.ascended,
-                wanderer = data.wanderer,
-                scholar = data.scholar,
-                survivor = data.survivor,
-                outlaw = data.outlaw,
-                hunter = data.hunter,
-                friend = data.friend,
-                monk = data.monk,
-                chieftain = data.chieftain,
-                saint = data.saint,
-                dragonSlayer = data.dragonSlayer,
-                karma = data.karma,
-                karmaCap = data.karmaCap;
-
-            //general data
-
-            document.querySelector(".totalTime").innerHTML = totalTime;
-            document.querySelector(".totalFood").innerHTML = totalFood;
-            document.querySelector(".totalCycles").innerHTML = cycles;
-            document.querySelector(".remainingCycles").innerHTML = 20 - parseInt(cycles) + (extraCycles ? 5 : 0) || "";
-            document.querySelector(".survives").innerHTML = survives;
-            document.querySelector(".deaths").innerHTML = deaths;
-            document.querySelector(".quits").innerHTML = quits;
-            document.querySelector(".currentKarma").innerHTML = karma;
-            document.querySelector(".karmaCap").innerHTML = karmaCap;
-            document.querySelector(".quits").innerHTML = quits;
-            document.querySelector(".itemSwallowed").innerText = swallowedItem != "" ? swallowedItem : "<None>";
-            document.querySelector(".helpedPebbles").innerHTML = helpedPebbles ? "Yes" : "No";
-            document.querySelector(".deliveredPayload").innerHTML = deliveredPayload ? "Yes" : "No";
-            document.querySelector(".ascended").innerHTML = ascended ? "Yes" : "No";
-
-            //setup places
-            if (wanderer != null) {
-                //toggle unlocked on any that are completed
-                var divs = document.querySelectorAll("[data-region]");
-                for (var i = 0; i < divs.length; i++) {
-                    var regDiv = divs[i];
-                    var fullName = getKeyByValue(RW.RegionLookup, regDiv.dataset.region);
-                    if (wanderer.visited.indexOf(fullName) != -1) regDiv.classList.add("unlocked");else regDiv.classList.remove("unlocked");
-                }
-                //handle depths
-                if (ascended) document.querySelector("[data-region='dp']").classList.add("unlocked");else document.querySelector("[data-region='dp']").classList.remove("unlocked");
-            }
-
-            //achievements
-            //survivor
-            if (survivor != null) {
-                //unhide others
-                document.querySelector(".survivor-hidden").classList.remove("hide");
-                setupPipAchievement("survivor", RW.AchievementPointRequirements.survivor, survivor, true);
-            }
-            //wanderer
-            if (wanderer != null) {
-                setupPipAchievement("wanderer", RW.AchievementPointRequirements.traveller, wanderer);
-            }
-            //scholar
-            if (scholar != null) {
-                setupPipAchievement("scholar", RW.AchievementPointRequirements.scholar, scholar);
-            }
-            //outlaw
-            if (outlaw != null) {
-                setupIntAchievement("outlaw", RW.AchievementPointRequirements.outlaw, outlaw);
-            }
-            //hunter
-            if (hunter != null) {
-                setupIntAchievement("hunter", RW.AchievementPointRequirements.hunter, hunter);
-            }
-            //friend
-            if (friend != null) {
-                setupFloatAchievement("friend", RW.AchievementPointRequirements.friend, friend);
-            }
-            //monk
-            if (monk != null) {
-                setupIntAchievement("monk", RW.AchievementPointRequirements.monk, monk);
-            }
-            //chieftain
-            if (chieftain != null) {
-                setupFloatAchievement("chieftain", RW.AchievementPointRequirements.chieftain, chieftain);
-            }
-            //saint
-            if (saint != null) {
-                setupIntAchievement("saint", RW.AchievementPointRequirements.saint, saint);
-            }
-            //dragonSlayer
-            if (dragonSlayer != null) {
-                setupDragonSlayer(RW.AchievementPointRequirements.dragonSlayer, dragonSlayer);
-            }
-
-            //handle karma data
-            if (karma != null) {
-                var activeKarmaDiv = document.querySelector(".karma.active");
-                var inactiveKarmaDiv = document.querySelector(".karma.inactive");
-                //look for a karma cap
-                var cap = karmaCap || 4;
-                var currKarma = Math.min(karma, cap);
-                //compare for column index
-                var column = RW.KarmaCapTracker[cap.toString()];
-                console.log(column);
-                //move to proper index
-                activeKarmaDiv.style.backgroundPositionX = inactiveKarmaDiv.style.backgroundPositionX = -column * RW.KarmaAtlasSize.width + "px";
-                //move dial to proper y position
-                //switch the active to the current type
-                var offsetY = (9 - currKarma) * RW.KarmaAtlasSize.height;
-                activeKarmaDiv.style.backgroundPositionY = "-" + offsetY + "px";
-                inactiveKarmaDiv.style.backgroundPositionY = "calc(-50% - " + (offsetY + 75) + "px)";
-            }
-
-            //handle kills data
-            if (kills != null) {
-                if (kills.length <= 0) return;
-                //order by biggest boy points
-                // kills.sort((a, b) => a.score > b.score ? -1 : 1);
-                //order by hierarchy
-                kills.sort(function (a, b) {
-                    var keys = Object.keys(RW.SpriteAtlasIndex);
-                    if (keys.indexOf(a.key) > keys.indexOf(b.key)) return 1;else return -1;
-                });
-                var _iteratorNormalCompletion = true;
-                var _didIteratorError = false;
-                var _iteratorError = undefined;
-
-                try {
-                    for (var _iterator = kills[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-                        var killData = _step.value;
-
-                        //create a kill template
-                        var killDiv = RW.CreatureKillTemplate.cloneNode(true);
-                        killDiv.querySelector(".kill-amount").innerHTML = killData.kills;
-                        killDiv.querySelector(".kill-worth").innerHTML = "x" + killData.score;
-
-                        //get the icon
-                        var position = RW.SpriteAtlasIndex[killData.key];
-
-                        var iconDiv = killDiv.querySelector(".creature-icon");
-                        var x = position.x * RW.SpriteAtlasSize.width;
-                        var y = position.y * RW.SpriteAtlasSize.height;
-                        iconDiv.style.backgroundPositionX = -x + "px";
-                        iconDiv.style.backgroundPositionY = -y + "px";
-
-                        //add a hover
-                        iconDiv.title = killDiv.querySelector(".kill-amount").title = killData.name;
-
-                        //attach to container
-                        document.querySelector(".creature-kill-container").appendChild(killDiv);
-
-                        // return;
-                    }
-                } catch (err) {
-                    _didIteratorError = true;
-                    _iteratorError = err;
-                } finally {
-                    try {
-                        if (!_iteratorNormalCompletion && _iterator.return) {
-                            _iterator.return();
-                        }
-                    } finally {
-                        if (_didIteratorError) {
-                            throw _iteratorError;
-                        }
-                    }
-                }
-            }
-        }
-    }, {
-        key: "clear",
-        value: function clear() {
-            //relock map
-            var mapDivs = document.querySelectorAll("[data-region]");
-            mapDivs.forEach(function (el) {
-                return el.classList.remove("unlocked");
-            });
-
-            //delete kills
-            var killDivs = document.querySelectorAll(".creature-kill");
-            killDivs.forEach(function (el) {
-                el.remove();
-                el = null;
-            });
-
-            //reset achievements
-            var achieveDivs = document.querySelectorAll(".achievement");
-            achieveDivs.forEach(function (el) {
-                el.classList.remove("complete");
-                el.classList.add("inactive");
-
-                var pips = el.querySelector(".pips");
-                if (pips != null) pips.innerHTML = "";
-            });
-        }
-    }]);
-
-    return Layout;
-}();
-
-exports.default = Layout;
-
-
-function setupPipAchievement(id, pointRequirement, obj) {
-    var staticValue = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
-    var aDiv = document.querySelector("[data-achievement='" + id + "']");
-    aDiv.classList.remove("inactive");
-    //set the pips
-    var pipsDiv = aDiv.querySelector(".pips");
-    // const length = (staticValue) ? parseInt(obj.data) : obj.data.length;
-    for (var i = 0; i < pointRequirement; i++) {
-        var pip = document.createElement("div");
-        if (staticValue) {
-            if (parseInt(obj.data) > i) pip.classList.add("pip", "full");else pip.classList.add("pip", "empty");
-        } else {
-            if (obj.data[i] == 1) pip.classList.add("pip", "full");else if (obj.data[i] != 1 && obj.data[i] != 0 && i < obj.data.length) pip.classList.add("pip", "full"); //data-pearl
-            else pip.classList.add("pip", "empty");
-        }
-        pipsDiv.appendChild(pip);
-    }
-
-    var progressDiv = aDiv.querySelector(".progress");
-    if (pipsDiv.childNodes.length > 0) {
-        progressDiv.innerHTML = "";
-    }
-    if (obj.completed) aDiv.classList.add("complete");
-}
-
-function setupIntAchievement(id, pointRequirement, obj) {
-    var aDiv = document.querySelector("[data-achievement='" + id + "']");
-    aDiv.classList.remove("inactive");
-    //set the status
-    var statusDiv = aDiv.querySelector(".status-bar .slider");
-    var perc = parseInt(obj.data) / pointRequirement * 100;
-    statusDiv.style.left = perc + "%";
-
-    var progressDiv = aDiv.querySelector(".progress");
-    progressDiv.innerHTML = "";
-    if (obj.completed) aDiv.classList.add("complete");
-
-    var countDiv = aDiv.querySelector(".count");
-    countDiv.innerHTML = parseInt(obj.data) + "/" + pointRequirement;
-}
-
-function setupFloatAchievement(id, pointRequirement, obj) {
-    var aDiv = document.querySelector("[data-achievement='" + id + "']");
-    aDiv.classList.remove("inactive");
-    //set the status
-    var statusDiv = aDiv.querySelector(".status-bar .slider");
-    var perc = parseFloat(obj.data) / pointRequirement * 100;
-    statusDiv.style.left = perc + "%";
-
-    var progressDiv = aDiv.querySelector(".progress");
-    progressDiv.innerHTML = "";
-    if (obj.completed) aDiv.classList.add("complete");
-
-    var countDiv = aDiv.querySelector(".count");
-    countDiv.innerHTML = parseFloat(obj.data).toFixed(2) + "/" + pointRequirement;
-}
-
-function setupDragonSlayer(pointRequirement, obj) {
-    var aDiv = document.querySelector("[data-achievement='dragonSlayer']");
-    aDiv.classList.remove("inactive");
-    //set the pips
-    var pipsDiv = aDiv.querySelector(".pips");
-    for (var i = 0; i < obj.data.length; i++) {
-        var pip = document.createElement("div");
-        if (obj.data[i] == "1") pip.classList.add("pip", "full", "dragon-slayer", "pip-" + i);else pip.classList.add("pip", "empty");
-        pipsDiv.appendChild(pip);
-    }
-
-    if (obj.completed) aDiv.classList.add("complete");
-}
-
-function getKeyByValue(object, value) {
-    return Object.keys(object).find(function (key) {
-        return object[key] === value;
-    });
-}
-
-},{"./constants":4}],6:[function(require,module,exports){
-"use strict";
-
-var _Log = require("./Log");
-
-var _Log2 = _interopRequireDefault(_Log);
-
-var _constants = require("./constants");
-
-var RW = _interopRequireWildcard(_constants);
-
-var _Parser = require("./Parser");
-
-var _Parser2 = _interopRequireDefault(_Parser);
-
-var _layout = require("./layout");
-
-var _layout2 = _interopRequireDefault(_layout);
-
-var _Score = require("./Score");
-
-var _Score2 = _interopRequireDefault(_Score);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-new _Log2.default();
-new _Score2.default();
-
-var rainworldData = void 0;
-
-//listen for save file change
-document.getElementById("file-upload").addEventListener("change", function (e) {
-    //if we have a value, fetch and send
-    if (e.target.files.length <= 0) return;
-
-    //try to parse
-    var fileReader = new FileReader();
-    fileReader.onload = function (ev) {
-        // console.log(fileReader.result);
-        var data = _Parser2.default.parse(fileReader.result);
-        _layout2.default.show(data);
-        rainworldData = data;
-
-        //set the name in the text
-        document.querySelector(".file-input .name").innerHTML = e.target.files[0].name;
-
-        //set preview
-        document.getElementById("rank-preview").innerHTML = _Log2.default.compute(rainworldData);
-        document.getElementById("kills-preview").innerHTML = _Log2.default.getKillsScore(rainworldData);
-    };
-    fileReader.readAsText(e.target.files[0]);
-});
-
-document.querySelector(".btn-calculate").addEventListener("click", function () {
-    _Score2.default.show(rainworldData);
-});
-document.querySelector(".btn-sample").addEventListener("click", function () {
-    //show sample file
-    fetch('sav-comp.txt').then(function (blob) {
-        return blob.text();
-    }).then(function (txt) {
-        //parse out hunter data
-        var data = _Parser2.default.parse(txt);
-        rainworldData = data;
-        _layout2.default.show(data);
-
-        //set preview
-        document.getElementById("rank-preview").innerHTML = _Log2.default.compute(rainworldData);
-        document.getElementById("kills-preview").innerHTML = _Log2.default.getKillsScore(rainworldData);
-    });
-});
-
-/*------------- LAYOUT ----------------*/
-
-},{"./Log":1,"./Parser":2,"./Score":3,"./constants":4,"./layout":5}]},{},[6])
-
-//# sourceMappingURL=rainworld-tracker.js.map
+/*
+ * ATTENTION: An "eval-source-map" devtool has been used.
+ * This devtool is neither made for production nor for readable output files.
+ * It uses "eval()" calls to create a separate source file with attached SourceMaps in the browser devtools.
+ * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
+ * or disable the default devtool with "devtool: false".
+ * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
+ */
+/******/ (() => { // webpackBootstrap
+/******/ 	"use strict";
+/******/ 	var __webpack_modules__ = ({
+
+/***/ "./src/Log.js":
+/*!********************!*\
+  !*** ./src/Log.js ***!
+  \********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"default\": () => (/* binding */ Log)\n/* harmony export */ });\n/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ \"./src/constants.js\");\n\r\n\r\nclass Log {\r\n    constructor() {\r\n        Log.rankItems = [];\r\n        Log.score = 0;\r\n        Log.multiplier = 1;\r\n\r\n        document.querySelector(\".log .btn-close\").addEventListener(\"click\", () => {\r\n            Log.hide(); \r\n        });\r\n    }\r\n    static show(data) {\r\n        document.querySelector(\".log\").classList.remove(\"hide\");\r\n        Log.compute(data);\r\n    }\r\n    static hide() {\r\n        document.querySelector(\".log\").classList.add(\"hide\");\r\n    }\r\n    static compute(data) {\r\n        Log.clear();\r\n        //calculate the data\r\n        //food\r\n        Log.addRankItem(\"Food\", data.totalFood || 0, 1);\r\n        //successful cycles\r\n        Log.addRankItem(\"Successful cycles\", data.survives || 0, 10);\r\n        //deaths\r\n        Log.addRankItem(\"Deaths\", data.deaths || 0, -3);\r\n        //quits\r\n        Log.addRankItem(\"Quits\", data.quits || 0, -3);\r\n        //time\r\n        Log.addRankItem(\"Time\", data.totalTimeRaw, -1, (data.totalTimeRaw != null) ? -(data.totalTimeRaw / 60) : 0);\r\n        //delivered payload\r\n        if(data.deliveredPayload)\r\n            Log.addRankItem(\"Delivered Payload\", data.deliveredPayload ? 100 : 0, 1);\r\n        //helped pebbles\r\n        if(data.helpedPebbles)\r\n            Log.addRankItem(\"Helped Five Pebbles\", data.helpedPebbles ? 40 : 0, 1);\r\n        //ascended\r\n        if(data.ascended)\r\n            Log.addRankItem(\"Ascended\", data.ascended ? 300 : 0, 1);\r\n        Log._computeScore();\r\n\r\n        //show total before creatures\r\n        Log.addTotalItem(Log.getTotalScore());\r\n\r\n        //creatures\r\n        if(data.kills != null) {\r\n            for(let i = 0 ; i < data.kills.length; i++) {\r\n                const killItemData = data.kills[i];\r\n                Log.addRankItem(`${killItemData.name} kill(s)`, killItemData.kills, killItemData.score);\r\n            }\r\n        }\r\n        Log._computeScore();\r\n        //show total before multiplier\r\n        Log.addTotalItem(Log.getTotalScore());\r\n\r\n        //achievements\r\n        const score = Log.getTotalScore();\r\n        let multiplier = 1;\r\n        for(let achievement of [data.survivor, data.wanderer, data.chieftain, data.monk, data.scholar, \r\n            data.outlaw, data.dragonSlayer, data.hunter, data.friend, data.saint]) \r\n        {\r\n            if(achievement != null) {\r\n                if(achievement.completed) {\r\n                    multiplier++;\r\n                    Log.addRankItem(achievement.name, multiplier, 0, score * multiplier, true);\r\n                }\r\n            }\r\n        }\r\n        \r\n\r\n        Log.score = score * multiplier;\r\n        //show total\r\n        Log.addTotalItem(Log.score);\r\n\r\n        return Log.score;\r\n    }\r\n\r\n    static getKillsScore(data) {\r\n        let score = 0;\r\n        if(data.kills != null) {\r\n            for(let i = 0 ; i < data.kills.length; i++) {\r\n                const killItemData = data.kills[i];\r\n                score += killItemData.kills * killItemData.score;\r\n            }\r\n        }\r\n        return score;\r\n    }\r\n\r\n    static addRankItem(name, amount, value=0, handfeedScore=0, isMultiplier=false) {\r\n        const score = (handfeedScore != 0) ? handfeedScore : amount * value;\r\n        //get div\r\n        const div = _constants__WEBPACK_IMPORTED_MODULE_0__.LogItemTemplate.cloneNode(true);\r\n        const titleDiv = div.querySelector(\".title\");\r\n        const amountDiv = div.querySelector(\".amount\");\r\n        const valueDiv =  div.querySelector(\".value\");\r\n        const totalDiv = div.querySelector(\".total\");\r\n        titleDiv.innerHTML = name;\r\n        amountDiv.innerHTML = (amount == \"\") ? \"\" : `x ${amount}`;\r\n        if(value != 0)\r\n            valueDiv.innerHTML = `@ ${value}`;\r\n        totalDiv.innerHTML = Math.floor(score);\r\n\r\n        //check for negative scores\r\n        if(valueDiv.innerHTML.indexOf(\"-\") != -1) valueDiv.classList.add(\"negative\");\r\n        if(totalDiv.innerHTML.indexOf(\"-\") != -1) totalDiv.classList.add(\"negative\");\r\n\r\n        //push into container\r\n        document.querySelector(\".log .log-list\").appendChild(div);\r\n\r\n        if(!isMultiplier) Log.rankItems.push({name, score});\r\n        else Log.multiplier++;\r\n    }\r\n    static addTotalItem(score) {\r\n        const div = _constants__WEBPACK_IMPORTED_MODULE_0__.LogItemTotalTemplate.cloneNode(true);\r\n        div.querySelector(\".total\").innerHTML = score;\r\n\r\n        //push into container\r\n        document.querySelector(\".log .log-list\").appendChild(div);\r\n    }\r\n\r\n    static getTotalScore() {\r\n        let score = 0;\r\n        for(let item of Log.rankItems) score += parseInt(item.score);\r\n        return score;\r\n    }\r\n\r\n    static getFinalScore() {\r\n        return Log.score;\r\n    }\r\n\r\n    static _computeScore() {\r\n        Log.score += Log.getTotalScore();\r\n    }\r\n\r\n    static clear() {\r\n        Log.rankItems = [];\r\n        Log.score = 0;\r\n        Log.multiplier = 1;\r\n        document.querySelector(\".log .log-list\").innerHTML = \"\";\r\n    }\r\n}//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9Mb2cuanM/OTEzYSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7OztBQUFrQzs7QUFFbkI7QUFDZjtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBLHVCO0FBQ0EsU0FBUztBQUNUO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBLDJCQUEyQix1QkFBdUI7QUFDbEQ7QUFDQSxtQ0FBbUMsa0JBQWtCO0FBQ3JEO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7OztBQUdBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBLDJCQUEyQix1QkFBdUI7QUFDbEQ7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBLG9CQUFvQixpRUFBNEI7QUFDaEQ7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLHlEQUF5RCxPQUFPO0FBQ2hFO0FBQ0Esc0NBQXNDLE1BQU07QUFDNUM7O0FBRUE7QUFDQTtBQUNBOztBQUVBO0FBQ0E7O0FBRUEsOENBQThDLFlBQVk7QUFDMUQ7QUFDQTtBQUNBO0FBQ0Esb0JBQW9CLHNFQUFpQztBQUNyRDs7QUFFQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBIiwiZmlsZSI6Ii4vc3JjL0xvZy5qcy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCAqIGFzIFJXIGZyb20gXCIuL2NvbnN0YW50c1wiO1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgY2xhc3MgTG9nIHtcclxuICAgIGNvbnN0cnVjdG9yKCkge1xyXG4gICAgICAgIExvZy5yYW5rSXRlbXMgPSBbXTtcclxuICAgICAgICBMb2cuc2NvcmUgPSAwO1xyXG4gICAgICAgIExvZy5tdWx0aXBsaWVyID0gMTtcclxuXHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5sb2cgLmJ0bi1jbG9zZVwiKS5hZGRFdmVudExpc3RlbmVyKFwiY2xpY2tcIiwgKCkgPT4ge1xyXG4gICAgICAgICAgICBMb2cuaGlkZSgpOyBcclxuICAgICAgICB9KTtcclxuICAgIH1cclxuICAgIHN0YXRpYyBzaG93KGRhdGEpIHtcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmxvZ1wiKS5jbGFzc0xpc3QucmVtb3ZlKFwiaGlkZVwiKTtcclxuICAgICAgICBMb2cuY29tcHV0ZShkYXRhKTtcclxuICAgIH1cclxuICAgIHN0YXRpYyBoaWRlKCkge1xyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIubG9nXCIpLmNsYXNzTGlzdC5hZGQoXCJoaWRlXCIpO1xyXG4gICAgfVxyXG4gICAgc3RhdGljIGNvbXB1dGUoZGF0YSkge1xyXG4gICAgICAgIExvZy5jbGVhcigpO1xyXG4gICAgICAgIC8vY2FsY3VsYXRlIHRoZSBkYXRhXHJcbiAgICAgICAgLy9mb29kXHJcbiAgICAgICAgTG9nLmFkZFJhbmtJdGVtKFwiRm9vZFwiLCBkYXRhLnRvdGFsRm9vZCB8fCAwLCAxKTtcclxuICAgICAgICAvL3N1Y2Nlc3NmdWwgY3ljbGVzXHJcbiAgICAgICAgTG9nLmFkZFJhbmtJdGVtKFwiU3VjY2Vzc2Z1bCBjeWNsZXNcIiwgZGF0YS5zdXJ2aXZlcyB8fCAwLCAxMCk7XHJcbiAgICAgICAgLy9kZWF0aHNcclxuICAgICAgICBMb2cuYWRkUmFua0l0ZW0oXCJEZWF0aHNcIiwgZGF0YS5kZWF0aHMgfHwgMCwgLTMpO1xyXG4gICAgICAgIC8vcXVpdHNcclxuICAgICAgICBMb2cuYWRkUmFua0l0ZW0oXCJRdWl0c1wiLCBkYXRhLnF1aXRzIHx8IDAsIC0zKTtcclxuICAgICAgICAvL3RpbWVcclxuICAgICAgICBMb2cuYWRkUmFua0l0ZW0oXCJUaW1lXCIsIGRhdGEudG90YWxUaW1lUmF3LCAtMSwgKGRhdGEudG90YWxUaW1lUmF3ICE9IG51bGwpID8gLShkYXRhLnRvdGFsVGltZVJhdyAvIDYwKSA6IDApO1xyXG4gICAgICAgIC8vZGVsaXZlcmVkIHBheWxvYWRcclxuICAgICAgICBpZihkYXRhLmRlbGl2ZXJlZFBheWxvYWQpXHJcbiAgICAgICAgICAgIExvZy5hZGRSYW5rSXRlbShcIkRlbGl2ZXJlZCBQYXlsb2FkXCIsIGRhdGEuZGVsaXZlcmVkUGF5bG9hZCA/IDEwMCA6IDAsIDEpO1xyXG4gICAgICAgIC8vaGVscGVkIHBlYmJsZXNcclxuICAgICAgICBpZihkYXRhLmhlbHBlZFBlYmJsZXMpXHJcbiAgICAgICAgICAgIExvZy5hZGRSYW5rSXRlbShcIkhlbHBlZCBGaXZlIFBlYmJsZXNcIiwgZGF0YS5oZWxwZWRQZWJibGVzID8gNDAgOiAwLCAxKTtcclxuICAgICAgICAvL2FzY2VuZGVkXHJcbiAgICAgICAgaWYoZGF0YS5hc2NlbmRlZClcclxuICAgICAgICAgICAgTG9nLmFkZFJhbmtJdGVtKFwiQXNjZW5kZWRcIiwgZGF0YS5hc2NlbmRlZCA/IDMwMCA6IDAsIDEpO1xyXG4gICAgICAgIExvZy5fY29tcHV0ZVNjb3JlKCk7XHJcblxyXG4gICAgICAgIC8vc2hvdyB0b3RhbCBiZWZvcmUgY3JlYXR1cmVzXHJcbiAgICAgICAgTG9nLmFkZFRvdGFsSXRlbShMb2cuZ2V0VG90YWxTY29yZSgpKTtcclxuXHJcbiAgICAgICAgLy9jcmVhdHVyZXNcclxuICAgICAgICBpZihkYXRhLmtpbGxzICE9IG51bGwpIHtcclxuICAgICAgICAgICAgZm9yKGxldCBpID0gMCA7IGkgPCBkYXRhLmtpbGxzLmxlbmd0aDsgaSsrKSB7XHJcbiAgICAgICAgICAgICAgICBjb25zdCBraWxsSXRlbURhdGEgPSBkYXRhLmtpbGxzW2ldO1xyXG4gICAgICAgICAgICAgICAgTG9nLmFkZFJhbmtJdGVtKGAke2tpbGxJdGVtRGF0YS5uYW1lfSBraWxsKHMpYCwga2lsbEl0ZW1EYXRhLmtpbGxzLCBraWxsSXRlbURhdGEuc2NvcmUpO1xyXG4gICAgICAgICAgICB9XHJcbiAgICAgICAgfVxyXG4gICAgICAgIExvZy5fY29tcHV0ZVNjb3JlKCk7XHJcbiAgICAgICAgLy9zaG93IHRvdGFsIGJlZm9yZSBtdWx0aXBsaWVyXHJcbiAgICAgICAgTG9nLmFkZFRvdGFsSXRlbShMb2cuZ2V0VG90YWxTY29yZSgpKTtcclxuXHJcbiAgICAgICAgLy9hY2hpZXZlbWVudHNcclxuICAgICAgICBjb25zdCBzY29yZSA9IExvZy5nZXRUb3RhbFNjb3JlKCk7XHJcbiAgICAgICAgbGV0IG11bHRpcGxpZXIgPSAxO1xyXG4gICAgICAgIGZvcihsZXQgYWNoaWV2ZW1lbnQgb2YgW2RhdGEuc3Vydml2b3IsIGRhdGEud2FuZGVyZXIsIGRhdGEuY2hpZWZ0YWluLCBkYXRhLm1vbmssIGRhdGEuc2Nob2xhciwgXHJcbiAgICAgICAgICAgIGRhdGEub3V0bGF3LCBkYXRhLmRyYWdvblNsYXllciwgZGF0YS5odW50ZXIsIGRhdGEuZnJpZW5kLCBkYXRhLnNhaW50XSkgXHJcbiAgICAgICAge1xyXG4gICAgICAgICAgICBpZihhY2hpZXZlbWVudCAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgICAgICBpZihhY2hpZXZlbWVudC5jb21wbGV0ZWQpIHtcclxuICAgICAgICAgICAgICAgICAgICBtdWx0aXBsaWVyKys7XHJcbiAgICAgICAgICAgICAgICAgICAgTG9nLmFkZFJhbmtJdGVtKGFjaGlldmVtZW50Lm5hbWUsIG11bHRpcGxpZXIsIDAsIHNjb3JlICogbXVsdGlwbGllciwgdHJ1ZSk7XHJcbiAgICAgICAgICAgICAgICB9XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICAgICAgXHJcblxyXG4gICAgICAgIExvZy5zY29yZSA9IHNjb3JlICogbXVsdGlwbGllcjtcclxuICAgICAgICAvL3Nob3cgdG90YWxcclxuICAgICAgICBMb2cuYWRkVG90YWxJdGVtKExvZy5zY29yZSk7XHJcblxyXG4gICAgICAgIHJldHVybiBMb2cuc2NvcmU7XHJcbiAgICB9XHJcblxyXG4gICAgc3RhdGljIGdldEtpbGxzU2NvcmUoZGF0YSkge1xyXG4gICAgICAgIGxldCBzY29yZSA9IDA7XHJcbiAgICAgICAgaWYoZGF0YS5raWxscyAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgIGZvcihsZXQgaSA9IDAgOyBpIDwgZGF0YS5raWxscy5sZW5ndGg7IGkrKykge1xyXG4gICAgICAgICAgICAgICAgY29uc3Qga2lsbEl0ZW1EYXRhID0gZGF0YS5raWxsc1tpXTtcclxuICAgICAgICAgICAgICAgIHNjb3JlICs9IGtpbGxJdGVtRGF0YS5raWxscyAqIGtpbGxJdGVtRGF0YS5zY29yZTtcclxuICAgICAgICAgICAgfVxyXG4gICAgICAgIH1cclxuICAgICAgICByZXR1cm4gc2NvcmU7XHJcbiAgICB9XHJcblxyXG4gICAgc3RhdGljIGFkZFJhbmtJdGVtKG5hbWUsIGFtb3VudCwgdmFsdWU9MCwgaGFuZGZlZWRTY29yZT0wLCBpc011bHRpcGxpZXI9ZmFsc2UpIHtcclxuICAgICAgICBjb25zdCBzY29yZSA9IChoYW5kZmVlZFNjb3JlICE9IDApID8gaGFuZGZlZWRTY29yZSA6IGFtb3VudCAqIHZhbHVlO1xyXG4gICAgICAgIC8vZ2V0IGRpdlxyXG4gICAgICAgIGNvbnN0IGRpdiA9IFJXLkxvZ0l0ZW1UZW1wbGF0ZS5jbG9uZU5vZGUodHJ1ZSk7XHJcbiAgICAgICAgY29uc3QgdGl0bGVEaXYgPSBkaXYucXVlcnlTZWxlY3RvcihcIi50aXRsZVwiKTtcclxuICAgICAgICBjb25zdCBhbW91bnREaXYgPSBkaXYucXVlcnlTZWxlY3RvcihcIi5hbW91bnRcIik7XHJcbiAgICAgICAgY29uc3QgdmFsdWVEaXYgPSAgZGl2LnF1ZXJ5U2VsZWN0b3IoXCIudmFsdWVcIik7XHJcbiAgICAgICAgY29uc3QgdG90YWxEaXYgPSBkaXYucXVlcnlTZWxlY3RvcihcIi50b3RhbFwiKTtcclxuICAgICAgICB0aXRsZURpdi5pbm5lckhUTUwgPSBuYW1lO1xyXG4gICAgICAgIGFtb3VudERpdi5pbm5lckhUTUwgPSAoYW1vdW50ID09IFwiXCIpID8gXCJcIiA6IGB4ICR7YW1vdW50fWA7XHJcbiAgICAgICAgaWYodmFsdWUgIT0gMClcclxuICAgICAgICAgICAgdmFsdWVEaXYuaW5uZXJIVE1MID0gYEAgJHt2YWx1ZX1gO1xyXG4gICAgICAgIHRvdGFsRGl2LmlubmVySFRNTCA9IE1hdGguZmxvb3Ioc2NvcmUpO1xyXG5cclxuICAgICAgICAvL2NoZWNrIGZvciBuZWdhdGl2ZSBzY29yZXNcclxuICAgICAgICBpZih2YWx1ZURpdi5pbm5lckhUTUwuaW5kZXhPZihcIi1cIikgIT0gLTEpIHZhbHVlRGl2LmNsYXNzTGlzdC5hZGQoXCJuZWdhdGl2ZVwiKTtcclxuICAgICAgICBpZih0b3RhbERpdi5pbm5lckhUTUwuaW5kZXhPZihcIi1cIikgIT0gLTEpIHRvdGFsRGl2LmNsYXNzTGlzdC5hZGQoXCJuZWdhdGl2ZVwiKTtcclxuXHJcbiAgICAgICAgLy9wdXNoIGludG8gY29udGFpbmVyXHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5sb2cgLmxvZy1saXN0XCIpLmFwcGVuZENoaWxkKGRpdik7XHJcblxyXG4gICAgICAgIGlmKCFpc011bHRpcGxpZXIpIExvZy5yYW5rSXRlbXMucHVzaCh7bmFtZSwgc2NvcmV9KTtcclxuICAgICAgICBlbHNlIExvZy5tdWx0aXBsaWVyKys7XHJcbiAgICB9XHJcbiAgICBzdGF0aWMgYWRkVG90YWxJdGVtKHNjb3JlKSB7XHJcbiAgICAgICAgY29uc3QgZGl2ID0gUlcuTG9nSXRlbVRvdGFsVGVtcGxhdGUuY2xvbmVOb2RlKHRydWUpO1xyXG4gICAgICAgIGRpdi5xdWVyeVNlbGVjdG9yKFwiLnRvdGFsXCIpLmlubmVySFRNTCA9IHNjb3JlO1xyXG5cclxuICAgICAgICAvL3B1c2ggaW50byBjb250YWluZXJcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmxvZyAubG9nLWxpc3RcIikuYXBwZW5kQ2hpbGQoZGl2KTtcclxuICAgIH1cclxuXHJcbiAgICBzdGF0aWMgZ2V0VG90YWxTY29yZSgpIHtcclxuICAgICAgICBsZXQgc2NvcmUgPSAwO1xyXG4gICAgICAgIGZvcihsZXQgaXRlbSBvZiBMb2cucmFua0l0ZW1zKSBzY29yZSArPSBwYXJzZUludChpdGVtLnNjb3JlKTtcclxuICAgICAgICByZXR1cm4gc2NvcmU7XHJcbiAgICB9XHJcblxyXG4gICAgc3RhdGljIGdldEZpbmFsU2NvcmUoKSB7XHJcbiAgICAgICAgcmV0dXJuIExvZy5zY29yZTtcclxuICAgIH1cclxuXHJcbiAgICBzdGF0aWMgX2NvbXB1dGVTY29yZSgpIHtcclxuICAgICAgICBMb2cuc2NvcmUgKz0gTG9nLmdldFRvdGFsU2NvcmUoKTtcclxuICAgIH1cclxuXHJcbiAgICBzdGF0aWMgY2xlYXIoKSB7XHJcbiAgICAgICAgTG9nLnJhbmtJdGVtcyA9IFtdO1xyXG4gICAgICAgIExvZy5zY29yZSA9IDA7XHJcbiAgICAgICAgTG9nLm11bHRpcGxpZXIgPSAxO1xyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIubG9nIC5sb2ctbGlzdFwiKS5pbm5lckhUTUwgPSBcIlwiO1xyXG4gICAgfVxyXG59Il0sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/Log.js\n");
+
+/***/ }),
+
+/***/ "./src/Parser.js":
+/*!***********************!*\
+  !*** ./src/Parser.js ***!
+  \***********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"default\": () => (/* binding */ Parser)\n/* harmony export */ });\n/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ \"./src/constants.js\");\n\r\n\r\n\r\nclass Parser {\r\n    static parse(txt) {\r\n        // const startIndex = txt.length - txt.split(\"\").reverse().join(\"\").indexOf(\">AviDgorp<\", 10);\r\n        //changed start index for hunter to SAVE STATE NUMBER 2\r\n        // const startIndex = txt.indexOf(\"SAV STATE NUMBER<svB>2\");\r\n        const startIndex = txt.lastIndexOf(\"SAVE STATE\");\r\n\r\n        if(startIndex == -1) {\r\n            alert(\"This save file does not contain a Hunter save.  \\n\\nIf you believe this is incorrect, please report an issue to https://github.com/jaclynonacloud/rainworld-tracker/issues, or contact jaclynonacloud@gmail.com.\");\r\n            return;\r\n        }\r\n    \r\n        const hunterText = txt.slice(startIndex);\r\n\r\n        //create save object\r\n        const hunterData = {\r\n            \"totalTime\" : getTimeFromSeconds(findDataValue(\"TOTTIME\", hunterText)),\r\n            \"totalTimeRaw\" : findDataValue(\"TOTTIME\", hunterText),\r\n            \"cycles\" : findDataValue(\"CURRVERCYCLES\", hunterText),\r\n            \"totalFood\" : findDataValue(\"TOTFOOD\", hunterText),\r\n            \"survives\" : findDataValue(\"SURVIVES\", hunterText),\r\n            \"deaths\" : findDataValue(\"DEATHS\", hunterText),\r\n            \"quits\" : findDataValue(\"QUITS\", hunterText),\r\n            \"karma\" : findDataValue(\"KARMA\", hunterText),\r\n            \"karmaCap\" : findDataValue(\"KARMACAP\", hunterText),\r\n            \"helpedPebbles\" : findDataExists(\"PEBBLESHELPED\", hunterText),\r\n            \"deliveredPayload\" : findDataExists(\"MOONREVIVED\", hunterText),\r\n            \"ascended\" : findDataExists(\"ASCENDED\", hunterText),\r\n            \"swallowedItem\" : findDataValue(\"SWALLOWEDITEMS\", hunterText, \"oA\"),\r\n            \"extraCycles\" : findDataExists(\"REDEXTRACYCLES\", hunterText),\r\n            \"kills\" : findKillValue(hunterText),\r\n            //achievements\r\n            \"survivor\" : getSurvivor(hunterText),\r\n            \"hunter\" : getHunter(hunterText),\r\n            \"saint\" : getSaint(hunterText),\r\n            \"wanderer\" : getWanderer(hunterText),\r\n            \"chieftain\" : getChieftain(hunterText),\r\n            \"monk\" : getMonk(hunterText),\r\n            \"outlaw\" : getOutlaw(hunterText),\r\n            \"dragonSlayer\" : getDragonSlayer(hunterText),\r\n            \"scholar\" : getScholar(hunterText),\r\n            \"friend\" : getFriend(hunterText),\r\n        };\r\n\r\n        return hunterData;\r\n    }\r\n}\r\n\r\n\r\nfunction findDataValue(id, txt, tag = \"\") {\r\n    let findIndex = txt.indexOf(`>${id}<`);\r\n    if(findIndex == -1) return \"\";\r\n    let startIndex = + findIndex + id.length;\r\n    if(startIndex == -1) return \"\";\r\n    if(tag != \"\") startIndex = txt.indexOf(tag, startIndex);\r\n    const valueIndex = txt.indexOf(\">\", startIndex) + 1;\r\n    const valueIndexEnd = txt.indexOf(\"<\", valueIndex);\r\n\r\n    return txt.slice(valueIndex, valueIndexEnd);\r\n}\r\n\r\nfunction findAchievementValue(id, txt) {\r\n    let achievementData = {};\r\n    let startIndex = txt.indexOf(id);\r\n    if(startIndex == -1) return null;\r\n    //first value identifies whether this achievement has been consumed\r\n    startIndex = txt.indexOf(\"egA\", startIndex);\r\n    let valueIndex = txt.indexOf(\">\", startIndex) + 1;\r\n    let valueIndexEnd = txt.indexOf(\"<\", valueIndex);\r\n    achievementData.consumed = txt.slice(valueIndex, valueIndexEnd);\r\n    //reuse for second val\r\n    valueIndex = txt.indexOf(\">\", valueIndexEnd) + 1;\r\n    valueIndexEnd = txt.indexOf(\"<\", valueIndex);\r\n    achievementData.data = txt.slice(valueIndex, valueIndexEnd);\r\n\r\n    return achievementData;\r\n}\r\n\r\nfunction findKillValue(txt) {\r\n    let startIndex = txt.indexOf(\"KILLS\") + 5;\r\n    let endIndex = txt.lastIndexOf(\"svD\");\r\n    endIndex = txt.indexOf(\"<\", endIndex);\r\n    //splice out text\r\n    const killText = txt.slice(startIndex, endIndex);\r\n    //array up\r\n    let killArray = killText.split(\">\");\r\n    killArray = killArray.map(el => el.replace(\"<svB\", \"\").replace(\"<svC\", \"\").replace(\"<svD\", \"\"));\r\n    killArray.shift();\r\n\r\n    //decipher the data\r\n    let result = [];\r\n    for(let i = 0; i < killArray.length; i+=2) {\r\n        const rawID = killArray[i];\r\n        const amount = parseInt(killArray[i+1]);\r\n        //decipher the creature type\r\n        let creatureID = parseInt(rawID.split(\"-\")[0]);\r\n        //if the id is a 32 (freak num), check the variant as well\r\n        if(creatureID == 32) creatureID = parseInt(\"32\" + rawID.split(\"-\")[2]);\r\n        //go find the creature\r\n        const creature = _getCreatureByID(creatureID);\r\n        if(creature != null) {\r\n            creature.kills = amount;\r\n            result.push(creature);\r\n        }\r\n    }\r\n\r\n    return result;\r\n}\r\n\r\nfunction findDataExists(id, txt) {\r\n    return txt.indexOf(id) != -1;\r\n}\r\n\r\n\r\nfunction _getCreatureByID(id) {\r\n    for(let key of Object.keys(_constants__WEBPACK_IMPORTED_MODULE_0__.CreatureLookup)) {\r\n        if(_constants__WEBPACK_IMPORTED_MODULE_0__.CreatureLookup[key].id == id) {\r\n            let creatureObj = _constants__WEBPACK_IMPORTED_MODULE_0__.CreatureLookup[key];\r\n            creatureObj.key = key;\r\n            creatureObj.name = creatureObj.name || key;\r\n            return creatureObj;\r\n        }\r\n    }\r\n    return null;\r\n}\r\n\r\n\r\n\r\n\r\nfunction getTimeFromSeconds(time) {\r\n    const hours = Math.floor(time / 3600);\r\n    const minutes = _setToTens(Math.floor(time % 3600 / 60));\r\n    const seconds = _setToTens(Math.floor(time % 3600 % 60));\r\n\r\n    return `${hours}:${minutes}:${seconds}`;\r\n}\r\nfunction _setToTens(time) {\r\n    if(time.toString().split(\"\").length < 2) return `0${time}`;\r\n    return time;\r\n}\r\n\r\n/*----- SPECIALIZED -----*/\r\nfunction getSurvivor(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Survivor\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseInt(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.survivor;\r\n    value.name = \"The Survivor\";\r\n\r\n    return value;\r\n}\r\nfunction getHunter(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Hunter\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseInt(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.hunter;\r\n    value.name = \"The Hunter\";\r\n\r\n    return value;\r\n}\r\nfunction getSaint(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Saint\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n    \r\n    value.completed = parseInt(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.saint;\r\n    value.name = \"The Saint\";\r\n\r\n    return value;\r\n}\r\nfunction getWanderer(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Traveller\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    //interpret data\r\n    const dataArray = value.data.split(\".\");\r\n    value.data = dataArray.map((el) => (el == \"1\") ? 1 : 0);\r\n    //add the places wandered to\r\n    value.visited = _getPlacesArray(dataArray);\r\n    value.notVisited = _getPlacesArray(_reverseDataArray(dataArray));\r\n\r\n    value.completed = value.visited.length >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.traveller;\r\n    value.name = \"The Wanderer\";\r\n\r\n    return value;\r\n}\r\nfunction getChieftain(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Chieftain\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseFloat(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.chieftain;\r\n    value.name = \"The Chieftain\";\r\n\r\n    return value;\r\n}\r\nfunction getMonk(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Monk\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseInt(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.monk;\r\n    value.name = \"The Monk\";\r\n\r\n    return value;\r\n}\r\nfunction getOutlaw(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Outlaw\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseInt(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.outlaw;\r\n    value.name = \"The Outlaw\";\r\n\r\n    return value;\r\n}\r\nfunction getDragonSlayer(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"DragonSlayer\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n    \r\n    //interpret data\r\n    let dataArray = value.data.split(\".\");\r\n    dataArray.pop();\r\n    value.data = dataArray.map((el) => (el == \"1\") ? 1 : 0);\r\n    //add the lizards killed    \r\n    value.lizardsKilled = _getLizardsArray(dataArray);\r\n    value.lizardsLeft = _getLizardsArray(_reverseDataArray(dataArray));\r\n\r\n\r\n    value.completed = value.lizardsKilled.length >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.dragonSlayer;\r\n    value.name = \"The Dragon Slayer\";\r\n\r\n    return value;\r\n}\r\nfunction getScholar(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Scholar\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.data = value.data.split(\".\").map(el => parseInt(el));\r\n    value.completed = value.data.length >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.scholar;\r\n    value.name = \"The Scholar\";\r\n\r\n    return value;\r\n}\r\nfunction getFriend(txt) {\r\n    //first, see if it exists\r\n    const value = findAchievementValue(\"Friend\", txt);\r\n    if(value == null) return null;\r\n    if(Object.keys(value).length === 0) return null;\r\n\r\n    value.completed = parseFloat(value.data) >= _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.friend;\r\n    value.name = \"The Friend\";\r\n\r\n    return value;\r\n}\r\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nfunction _reverseDataArray(dataArray) {\r\n    let result = [];\r\n    for(let i = 0; i < dataArray.length; i++)\r\n        if(dataArray[i] == \"1\") result.push(\"0\");\r\n        else result.push(\"1\");\r\n    return result;\r\n}\r\n\r\n\r\n\r\n\r\n\r\nfunction _getLizardsArray(dataArray) {\r\n    let lizardArray = [];\r\n    for(let i = 0; i < dataArray.length; i++) {\r\n        if(dataArray[i] == \"1\") {\r\n            switch(i) {\r\n                case 0: lizardArray.push(\"green\"); break;\r\n                case 1: lizardArray.push(\"magenta\"); break;\r\n                case 2: lizardArray.push(\"blue\"); break;\r\n                case 3: lizardArray.push(\"white\"); break;\r\n                case 4: lizardArray.push(\"yellow\"); break;\r\n                case 5: lizardArray.push(\"black\");\r\n            }\r\n        }\r\n    }\r\n    return lizardArray;\r\n}\r\n\r\n\r\nfunction _getPlacesArray(dataArray) {\r\n    let placesArray = [];\r\n    for(let i = 0; i < dataArray.length; i++) {\r\n        if(dataArray[i] == \"1\") {\r\n            switch(i) {\r\n                case 0: placesArray.push(\"Outskirts\"); break;\r\n                case 1: placesArray.push(\"Industrial Complex\"); break;\r\n                case 2: placesArray.push(\"Drainage System\"); break;\r\n                case 3: placesArray.push(\"Chimney Canopy\"); break;\r\n                case 4: placesArray.push(\"Garbage Wastes\"); break;\r\n                case 5: placesArray.push(\"Shaded Citadel\"); break;\r\n                case 6: placesArray.push(\"Shoreline\"); break;\r\n                case 7: placesArray.push(\"Sky Islands\"); break;\r\n                case 8: placesArray.push(\"Farm Arrays\"); break;\r\n                case 9: placesArray.push(\"Exterior\"); break;\r\n                case 10: placesArray.push(\"Five Pebbles\"); break;\r\n                case 11: placesArray.push(\"Subterranean\"); break;\r\n            }\r\n        }\r\n    }\r\n    return placesArray;\r\n}\r\n\r\n\r\n\r\nfunction _getKillsArray(dataArray) {\r\n    let killsArray = [];\r\n}//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9QYXJzZXIuanM/NDMyNSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7OztBQUFrQzs7O0FBR25CO0FBQ2Y7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTs7O0FBR0E7QUFDQSxvQ0FBb0MsR0FBRztBQUN2QztBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQSxrQkFBa0Isc0JBQXNCO0FBQ3hDO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBOzs7QUFHQTtBQUNBLCtCQUErQixzREFBaUI7QUFDaEQsV0FBVyxzREFBaUI7QUFDNUIsOEJBQThCLHNEQUFpQjtBQUMvQztBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7Ozs7QUFLQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQSxjQUFjLE1BQU0sR0FBRyxRQUFRLEdBQUcsUUFBUTtBQUMxQztBQUNBO0FBQ0Esd0RBQXdELEtBQUs7QUFDN0Q7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUEsOENBQThDLDZFQUF3QztBQUN0Rjs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQSw4Q0FBOEMsMkVBQXNDO0FBQ3BGOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBLDhDQUE4QywwRUFBcUM7QUFDbkY7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBLDhDQUE4Qyw4RUFBeUM7QUFDdkY7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUEsZ0RBQWdELDhFQUF5QztBQUN6Rjs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQSw4Q0FBOEMseUVBQW9DO0FBQ2xGOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBLDhDQUE4QywyRUFBc0M7QUFDcEY7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7OztBQUdBLG9EQUFvRCxpRkFBNEM7QUFDaEc7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQSwyQ0FBMkMsNEVBQXVDO0FBQ2xGOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBLGdEQUFnRCwyRUFBc0M7QUFDdEY7O0FBRUE7QUFDQTs7Ozs7Ozs7QUFRQTtBQUNBO0FBQ0Esa0JBQWtCLHNCQUFzQjtBQUN4QztBQUNBO0FBQ0E7QUFDQTs7Ozs7O0FBTUE7QUFDQTtBQUNBLGtCQUFrQixzQkFBc0I7QUFDeEM7QUFDQTtBQUNBLGtEQUFrRDtBQUNsRCxvREFBb0Q7QUFDcEQsaURBQWlEO0FBQ2pELGtEQUFrRDtBQUNsRCxtREFBbUQ7QUFDbkQ7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOzs7QUFHQTtBQUNBO0FBQ0Esa0JBQWtCLHNCQUFzQjtBQUN4QztBQUNBO0FBQ0Esc0RBQXNEO0FBQ3RELCtEQUErRDtBQUMvRCw0REFBNEQ7QUFDNUQsMkRBQTJEO0FBQzNELDJEQUEyRDtBQUMzRCwyREFBMkQ7QUFDM0Qsc0RBQXNEO0FBQ3RELHdEQUF3RDtBQUN4RCx3REFBd0Q7QUFDeEQscURBQXFEO0FBQ3JELDBEQUEwRDtBQUMxRCwwREFBMEQ7QUFDMUQ7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7OztBQUlBO0FBQ0E7QUFDQSIsImZpbGUiOiIuL3NyYy9QYXJzZXIuanMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgKiBhcyBSVyBmcm9tIFwiLi9jb25zdGFudHNcIjtcclxuXHJcblxyXG5leHBvcnQgZGVmYXVsdCBjbGFzcyBQYXJzZXIge1xyXG4gICAgc3RhdGljIHBhcnNlKHR4dCkge1xyXG4gICAgICAgIC8vIGNvbnN0IHN0YXJ0SW5kZXggPSB0eHQubGVuZ3RoIC0gdHh0LnNwbGl0KFwiXCIpLnJldmVyc2UoKS5qb2luKFwiXCIpLmluZGV4T2YoXCI+QXZpRGdvcnA8XCIsIDEwKTtcclxuICAgICAgICAvL2NoYW5nZWQgc3RhcnQgaW5kZXggZm9yIGh1bnRlciB0byBTQVZFIFNUQVRFIE5VTUJFUiAyXHJcbiAgICAgICAgLy8gY29uc3Qgc3RhcnRJbmRleCA9IHR4dC5pbmRleE9mKFwiU0FWIFNUQVRFIE5VTUJFUjxzdkI+MlwiKTtcclxuICAgICAgICBjb25zdCBzdGFydEluZGV4ID0gdHh0Lmxhc3RJbmRleE9mKFwiU0FWRSBTVEFURVwiKTtcclxuXHJcbiAgICAgICAgaWYoc3RhcnRJbmRleCA9PSAtMSkge1xyXG4gICAgICAgICAgICBhbGVydChcIlRoaXMgc2F2ZSBmaWxlIGRvZXMgbm90IGNvbnRhaW4gYSBIdW50ZXIgc2F2ZS4gIFxcblxcbklmIHlvdSBiZWxpZXZlIHRoaXMgaXMgaW5jb3JyZWN0LCBwbGVhc2UgcmVwb3J0IGFuIGlzc3VlIHRvIGh0dHBzOi8vZ2l0aHViLmNvbS9qYWNseW5vbmFjbG91ZC9yYWlud29ybGQtdHJhY2tlci9pc3N1ZXMsIG9yIGNvbnRhY3QgamFjbHlub25hY2xvdWRAZ21haWwuY29tLlwiKTtcclxuICAgICAgICAgICAgcmV0dXJuO1xyXG4gICAgICAgIH1cclxuICAgIFxyXG4gICAgICAgIGNvbnN0IGh1bnRlclRleHQgPSB0eHQuc2xpY2Uoc3RhcnRJbmRleCk7XHJcblxyXG4gICAgICAgIC8vY3JlYXRlIHNhdmUgb2JqZWN0XHJcbiAgICAgICAgY29uc3QgaHVudGVyRGF0YSA9IHtcclxuICAgICAgICAgICAgXCJ0b3RhbFRpbWVcIiA6IGdldFRpbWVGcm9tU2Vjb25kcyhmaW5kRGF0YVZhbHVlKFwiVE9UVElNRVwiLCBodW50ZXJUZXh0KSksXHJcbiAgICAgICAgICAgIFwidG90YWxUaW1lUmF3XCIgOiBmaW5kRGF0YVZhbHVlKFwiVE9UVElNRVwiLCBodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJjeWNsZXNcIiA6IGZpbmREYXRhVmFsdWUoXCJDVVJSVkVSQ1lDTEVTXCIsIGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcInRvdGFsRm9vZFwiIDogZmluZERhdGFWYWx1ZShcIlRPVEZPT0RcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwic3Vydml2ZXNcIiA6IGZpbmREYXRhVmFsdWUoXCJTVVJWSVZFU1wiLCBodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJkZWF0aHNcIiA6IGZpbmREYXRhVmFsdWUoXCJERUFUSFNcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwicXVpdHNcIiA6IGZpbmREYXRhVmFsdWUoXCJRVUlUU1wiLCBodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJrYXJtYVwiIDogZmluZERhdGFWYWx1ZShcIktBUk1BXCIsIGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcImthcm1hQ2FwXCIgOiBmaW5kRGF0YVZhbHVlKFwiS0FSTUFDQVBcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwiaGVscGVkUGViYmxlc1wiIDogZmluZERhdGFFeGlzdHMoXCJQRUJCTEVTSEVMUEVEXCIsIGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcImRlbGl2ZXJlZFBheWxvYWRcIiA6IGZpbmREYXRhRXhpc3RzKFwiTU9PTlJFVklWRURcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwiYXNjZW5kZWRcIiA6IGZpbmREYXRhRXhpc3RzKFwiQVNDRU5ERURcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwic3dhbGxvd2VkSXRlbVwiIDogZmluZERhdGFWYWx1ZShcIlNXQUxMT1dFRElURU1TXCIsIGh1bnRlclRleHQsIFwib0FcIiksXHJcbiAgICAgICAgICAgIFwiZXh0cmFDeWNsZXNcIiA6IGZpbmREYXRhRXhpc3RzKFwiUkVERVhUUkFDWUNMRVNcIiwgaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwia2lsbHNcIiA6IGZpbmRLaWxsVmFsdWUoaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIC8vYWNoaWV2ZW1lbnRzXHJcbiAgICAgICAgICAgIFwic3Vydml2b3JcIiA6IGdldFN1cnZpdm9yKGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcImh1bnRlclwiIDogZ2V0SHVudGVyKGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcInNhaW50XCIgOiBnZXRTYWludChodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJ3YW5kZXJlclwiIDogZ2V0V2FuZGVyZXIoaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwiY2hpZWZ0YWluXCIgOiBnZXRDaGllZnRhaW4oaHVudGVyVGV4dCksXHJcbiAgICAgICAgICAgIFwibW9ua1wiIDogZ2V0TW9uayhodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJvdXRsYXdcIiA6IGdldE91dGxhdyhodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJkcmFnb25TbGF5ZXJcIiA6IGdldERyYWdvblNsYXllcihodW50ZXJUZXh0KSxcclxuICAgICAgICAgICAgXCJzY2hvbGFyXCIgOiBnZXRTY2hvbGFyKGh1bnRlclRleHQpLFxyXG4gICAgICAgICAgICBcImZyaWVuZFwiIDogZ2V0RnJpZW5kKGh1bnRlclRleHQpLFxyXG4gICAgICAgIH07XHJcblxyXG4gICAgICAgIHJldHVybiBodW50ZXJEYXRhO1xyXG4gICAgfVxyXG59XHJcblxyXG5cclxuZnVuY3Rpb24gZmluZERhdGFWYWx1ZShpZCwgdHh0LCB0YWcgPSBcIlwiKSB7XHJcbiAgICBsZXQgZmluZEluZGV4ID0gdHh0LmluZGV4T2YoYD4ke2lkfTxgKTtcclxuICAgIGlmKGZpbmRJbmRleCA9PSAtMSkgcmV0dXJuIFwiXCI7XHJcbiAgICBsZXQgc3RhcnRJbmRleCA9ICsgZmluZEluZGV4ICsgaWQubGVuZ3RoO1xyXG4gICAgaWYoc3RhcnRJbmRleCA9PSAtMSkgcmV0dXJuIFwiXCI7XHJcbiAgICBpZih0YWcgIT0gXCJcIikgc3RhcnRJbmRleCA9IHR4dC5pbmRleE9mKHRhZywgc3RhcnRJbmRleCk7XHJcbiAgICBjb25zdCB2YWx1ZUluZGV4ID0gdHh0LmluZGV4T2YoXCI+XCIsIHN0YXJ0SW5kZXgpICsgMTtcclxuICAgIGNvbnN0IHZhbHVlSW5kZXhFbmQgPSB0eHQuaW5kZXhPZihcIjxcIiwgdmFsdWVJbmRleCk7XHJcblxyXG4gICAgcmV0dXJuIHR4dC5zbGljZSh2YWx1ZUluZGV4LCB2YWx1ZUluZGV4RW5kKTtcclxufVxyXG5cclxuZnVuY3Rpb24gZmluZEFjaGlldmVtZW50VmFsdWUoaWQsIHR4dCkge1xyXG4gICAgbGV0IGFjaGlldmVtZW50RGF0YSA9IHt9O1xyXG4gICAgbGV0IHN0YXJ0SW5kZXggPSB0eHQuaW5kZXhPZihpZCk7XHJcbiAgICBpZihzdGFydEluZGV4ID09IC0xKSByZXR1cm4gbnVsbDtcclxuICAgIC8vZmlyc3QgdmFsdWUgaWRlbnRpZmllcyB3aGV0aGVyIHRoaXMgYWNoaWV2ZW1lbnQgaGFzIGJlZW4gY29uc3VtZWRcclxuICAgIHN0YXJ0SW5kZXggPSB0eHQuaW5kZXhPZihcImVnQVwiLCBzdGFydEluZGV4KTtcclxuICAgIGxldCB2YWx1ZUluZGV4ID0gdHh0LmluZGV4T2YoXCI+XCIsIHN0YXJ0SW5kZXgpICsgMTtcclxuICAgIGxldCB2YWx1ZUluZGV4RW5kID0gdHh0LmluZGV4T2YoXCI8XCIsIHZhbHVlSW5kZXgpO1xyXG4gICAgYWNoaWV2ZW1lbnREYXRhLmNvbnN1bWVkID0gdHh0LnNsaWNlKHZhbHVlSW5kZXgsIHZhbHVlSW5kZXhFbmQpO1xyXG4gICAgLy9yZXVzZSBmb3Igc2Vjb25kIHZhbFxyXG4gICAgdmFsdWVJbmRleCA9IHR4dC5pbmRleE9mKFwiPlwiLCB2YWx1ZUluZGV4RW5kKSArIDE7XHJcbiAgICB2YWx1ZUluZGV4RW5kID0gdHh0LmluZGV4T2YoXCI8XCIsIHZhbHVlSW5kZXgpO1xyXG4gICAgYWNoaWV2ZW1lbnREYXRhLmRhdGEgPSB0eHQuc2xpY2UodmFsdWVJbmRleCwgdmFsdWVJbmRleEVuZCk7XHJcblxyXG4gICAgcmV0dXJuIGFjaGlldmVtZW50RGF0YTtcclxufVxyXG5cclxuZnVuY3Rpb24gZmluZEtpbGxWYWx1ZSh0eHQpIHtcclxuICAgIGxldCBzdGFydEluZGV4ID0gdHh0LmluZGV4T2YoXCJLSUxMU1wiKSArIDU7XHJcbiAgICBsZXQgZW5kSW5kZXggPSB0eHQubGFzdEluZGV4T2YoXCJzdkRcIik7XHJcbiAgICBlbmRJbmRleCA9IHR4dC5pbmRleE9mKFwiPFwiLCBlbmRJbmRleCk7XHJcbiAgICAvL3NwbGljZSBvdXQgdGV4dFxyXG4gICAgY29uc3Qga2lsbFRleHQgPSB0eHQuc2xpY2Uoc3RhcnRJbmRleCwgZW5kSW5kZXgpO1xyXG4gICAgLy9hcnJheSB1cFxyXG4gICAgbGV0IGtpbGxBcnJheSA9IGtpbGxUZXh0LnNwbGl0KFwiPlwiKTtcclxuICAgIGtpbGxBcnJheSA9IGtpbGxBcnJheS5tYXAoZWwgPT4gZWwucmVwbGFjZShcIjxzdkJcIiwgXCJcIikucmVwbGFjZShcIjxzdkNcIiwgXCJcIikucmVwbGFjZShcIjxzdkRcIiwgXCJcIikpO1xyXG4gICAga2lsbEFycmF5LnNoaWZ0KCk7XHJcblxyXG4gICAgLy9kZWNpcGhlciB0aGUgZGF0YVxyXG4gICAgbGV0IHJlc3VsdCA9IFtdO1xyXG4gICAgZm9yKGxldCBpID0gMDsgaSA8IGtpbGxBcnJheS5sZW5ndGg7IGkrPTIpIHtcclxuICAgICAgICBjb25zdCByYXdJRCA9IGtpbGxBcnJheVtpXTtcclxuICAgICAgICBjb25zdCBhbW91bnQgPSBwYXJzZUludChraWxsQXJyYXlbaSsxXSk7XHJcbiAgICAgICAgLy9kZWNpcGhlciB0aGUgY3JlYXR1cmUgdHlwZVxyXG4gICAgICAgIGxldCBjcmVhdHVyZUlEID0gcGFyc2VJbnQocmF3SUQuc3BsaXQoXCItXCIpWzBdKTtcclxuICAgICAgICAvL2lmIHRoZSBpZCBpcyBhIDMyIChmcmVhayBudW0pLCBjaGVjayB0aGUgdmFyaWFudCBhcyB3ZWxsXHJcbiAgICAgICAgaWYoY3JlYXR1cmVJRCA9PSAzMikgY3JlYXR1cmVJRCA9IHBhcnNlSW50KFwiMzJcIiArIHJhd0lELnNwbGl0KFwiLVwiKVsyXSk7XHJcbiAgICAgICAgLy9nbyBmaW5kIHRoZSBjcmVhdHVyZVxyXG4gICAgICAgIGNvbnN0IGNyZWF0dXJlID0gX2dldENyZWF0dXJlQnlJRChjcmVhdHVyZUlEKTtcclxuICAgICAgICBpZihjcmVhdHVyZSAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgIGNyZWF0dXJlLmtpbGxzID0gYW1vdW50O1xyXG4gICAgICAgICAgICByZXN1bHQucHVzaChjcmVhdHVyZSk7XHJcbiAgICAgICAgfVxyXG4gICAgfVxyXG5cclxuICAgIHJldHVybiByZXN1bHQ7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIGZpbmREYXRhRXhpc3RzKGlkLCB0eHQpIHtcclxuICAgIHJldHVybiB0eHQuaW5kZXhPZihpZCkgIT0gLTE7XHJcbn1cclxuXHJcblxyXG5mdW5jdGlvbiBfZ2V0Q3JlYXR1cmVCeUlEKGlkKSB7XHJcbiAgICBmb3IobGV0IGtleSBvZiBPYmplY3Qua2V5cyhSVy5DcmVhdHVyZUxvb2t1cCkpIHtcclxuICAgICAgICBpZihSVy5DcmVhdHVyZUxvb2t1cFtrZXldLmlkID09IGlkKSB7XHJcbiAgICAgICAgICAgIGxldCBjcmVhdHVyZU9iaiA9IFJXLkNyZWF0dXJlTG9va3VwW2tleV07XHJcbiAgICAgICAgICAgIGNyZWF0dXJlT2JqLmtleSA9IGtleTtcclxuICAgICAgICAgICAgY3JlYXR1cmVPYmoubmFtZSA9IGNyZWF0dXJlT2JqLm5hbWUgfHwga2V5O1xyXG4gICAgICAgICAgICByZXR1cm4gY3JlYXR1cmVPYmo7XHJcbiAgICAgICAgfVxyXG4gICAgfVxyXG4gICAgcmV0dXJuIG51bGw7XHJcbn1cclxuXHJcblxyXG5cclxuXHJcbmZ1bmN0aW9uIGdldFRpbWVGcm9tU2Vjb25kcyh0aW1lKSB7XHJcbiAgICBjb25zdCBob3VycyA9IE1hdGguZmxvb3IodGltZSAvIDM2MDApO1xyXG4gICAgY29uc3QgbWludXRlcyA9IF9zZXRUb1RlbnMoTWF0aC5mbG9vcih0aW1lICUgMzYwMCAvIDYwKSk7XHJcbiAgICBjb25zdCBzZWNvbmRzID0gX3NldFRvVGVucyhNYXRoLmZsb29yKHRpbWUgJSAzNjAwICUgNjApKTtcclxuXHJcbiAgICByZXR1cm4gYCR7aG91cnN9OiR7bWludXRlc306JHtzZWNvbmRzfWA7XHJcbn1cclxuZnVuY3Rpb24gX3NldFRvVGVucyh0aW1lKSB7XHJcbiAgICBpZih0aW1lLnRvU3RyaW5nKCkuc3BsaXQoXCJcIikubGVuZ3RoIDwgMikgcmV0dXJuIGAwJHt0aW1lfWA7XHJcbiAgICByZXR1cm4gdGltZTtcclxufVxyXG5cclxuLyotLS0tLSBTUEVDSUFMSVpFRCAtLS0tLSovXHJcbmZ1bmN0aW9uIGdldFN1cnZpdm9yKHR4dCkge1xyXG4gICAgLy9maXJzdCwgc2VlIGlmIGl0IGV4aXN0c1xyXG4gICAgY29uc3QgdmFsdWUgPSBmaW5kQWNoaWV2ZW1lbnRWYWx1ZShcIlN1cnZpdm9yXCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG5cclxuICAgIHZhbHVlLmNvbXBsZXRlZCA9IHBhcnNlSW50KHZhbHVlLmRhdGEpID49IFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMuc3Vydml2b3I7XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgU3Vydml2b3JcIjtcclxuXHJcbiAgICByZXR1cm4gdmFsdWU7XHJcbn1cclxuZnVuY3Rpb24gZ2V0SHVudGVyKHR4dCkge1xyXG4gICAgLy9maXJzdCwgc2VlIGlmIGl0IGV4aXN0c1xyXG4gICAgY29uc3QgdmFsdWUgPSBmaW5kQWNoaWV2ZW1lbnRWYWx1ZShcIkh1bnRlclwiLCB0eHQpO1xyXG4gICAgaWYodmFsdWUgPT0gbnVsbCkgcmV0dXJuIG51bGw7XHJcbiAgICBpZihPYmplY3Qua2V5cyh2YWx1ZSkubGVuZ3RoID09PSAwKSByZXR1cm4gbnVsbDtcclxuXHJcbiAgICB2YWx1ZS5jb21wbGV0ZWQgPSBwYXJzZUludCh2YWx1ZS5kYXRhKSA+PSBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLmh1bnRlcjtcclxuICAgIHZhbHVlLm5hbWUgPSBcIlRoZSBIdW50ZXJcIjtcclxuXHJcbiAgICByZXR1cm4gdmFsdWU7XHJcbn1cclxuZnVuY3Rpb24gZ2V0U2FpbnQodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiU2FpbnRcIiwgdHh0KTtcclxuICAgIGlmKHZhbHVlID09IG51bGwpIHJldHVybiBudWxsO1xyXG4gICAgaWYoT2JqZWN0LmtleXModmFsdWUpLmxlbmd0aCA9PT0gMCkgcmV0dXJuIG51bGw7XHJcbiAgICBcclxuICAgIHZhbHVlLmNvbXBsZXRlZCA9IHBhcnNlSW50KHZhbHVlLmRhdGEpID49IFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMuc2FpbnQ7XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgU2FpbnRcIjtcclxuXHJcbiAgICByZXR1cm4gdmFsdWU7XHJcbn1cclxuZnVuY3Rpb24gZ2V0V2FuZGVyZXIodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiVHJhdmVsbGVyXCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG5cclxuICAgIC8vaW50ZXJwcmV0IGRhdGFcclxuICAgIGNvbnN0IGRhdGFBcnJheSA9IHZhbHVlLmRhdGEuc3BsaXQoXCIuXCIpO1xyXG4gICAgdmFsdWUuZGF0YSA9IGRhdGFBcnJheS5tYXAoKGVsKSA9PiAoZWwgPT0gXCIxXCIpID8gMSA6IDApO1xyXG4gICAgLy9hZGQgdGhlIHBsYWNlcyB3YW5kZXJlZCB0b1xyXG4gICAgdmFsdWUudmlzaXRlZCA9IF9nZXRQbGFjZXNBcnJheShkYXRhQXJyYXkpO1xyXG4gICAgdmFsdWUubm90VmlzaXRlZCA9IF9nZXRQbGFjZXNBcnJheShfcmV2ZXJzZURhdGFBcnJheShkYXRhQXJyYXkpKTtcclxuXHJcbiAgICB2YWx1ZS5jb21wbGV0ZWQgPSB2YWx1ZS52aXNpdGVkLmxlbmd0aCA+PSBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLnRyYXZlbGxlcjtcclxuICAgIHZhbHVlLm5hbWUgPSBcIlRoZSBXYW5kZXJlclwiO1xyXG5cclxuICAgIHJldHVybiB2YWx1ZTtcclxufVxyXG5mdW5jdGlvbiBnZXRDaGllZnRhaW4odHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiQ2hpZWZ0YWluXCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG5cclxuICAgIHZhbHVlLmNvbXBsZXRlZCA9IHBhcnNlRmxvYXQodmFsdWUuZGF0YSkgPj0gUlcuQWNoaWV2ZW1lbnRQb2ludFJlcXVpcmVtZW50cy5jaGllZnRhaW47XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgQ2hpZWZ0YWluXCI7XHJcblxyXG4gICAgcmV0dXJuIHZhbHVlO1xyXG59XHJcbmZ1bmN0aW9uIGdldE1vbmsodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiTW9ua1wiLCB0eHQpO1xyXG4gICAgaWYodmFsdWUgPT0gbnVsbCkgcmV0dXJuIG51bGw7XHJcbiAgICBpZihPYmplY3Qua2V5cyh2YWx1ZSkubGVuZ3RoID09PSAwKSByZXR1cm4gbnVsbDtcclxuXHJcbiAgICB2YWx1ZS5jb21wbGV0ZWQgPSBwYXJzZUludCh2YWx1ZS5kYXRhKSA+PSBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLm1vbms7XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgTW9ua1wiO1xyXG5cclxuICAgIHJldHVybiB2YWx1ZTtcclxufVxyXG5mdW5jdGlvbiBnZXRPdXRsYXcodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiT3V0bGF3XCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG5cclxuICAgIHZhbHVlLmNvbXBsZXRlZCA9IHBhcnNlSW50KHZhbHVlLmRhdGEpID49IFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMub3V0bGF3O1xyXG4gICAgdmFsdWUubmFtZSA9IFwiVGhlIE91dGxhd1wiO1xyXG5cclxuICAgIHJldHVybiB2YWx1ZTtcclxufVxyXG5mdW5jdGlvbiBnZXREcmFnb25TbGF5ZXIodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiRHJhZ29uU2xheWVyXCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG4gICAgXHJcbiAgICAvL2ludGVycHJldCBkYXRhXHJcbiAgICBsZXQgZGF0YUFycmF5ID0gdmFsdWUuZGF0YS5zcGxpdChcIi5cIik7XHJcbiAgICBkYXRhQXJyYXkucG9wKCk7XHJcbiAgICB2YWx1ZS5kYXRhID0gZGF0YUFycmF5Lm1hcCgoZWwpID0+IChlbCA9PSBcIjFcIikgPyAxIDogMCk7XHJcbiAgICAvL2FkZCB0aGUgbGl6YXJkcyBraWxsZWQgICAgXHJcbiAgICB2YWx1ZS5saXphcmRzS2lsbGVkID0gX2dldExpemFyZHNBcnJheShkYXRhQXJyYXkpO1xyXG4gICAgdmFsdWUubGl6YXJkc0xlZnQgPSBfZ2V0TGl6YXJkc0FycmF5KF9yZXZlcnNlRGF0YUFycmF5KGRhdGFBcnJheSkpO1xyXG5cclxuXHJcbiAgICB2YWx1ZS5jb21wbGV0ZWQgPSB2YWx1ZS5saXphcmRzS2lsbGVkLmxlbmd0aCA+PSBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLmRyYWdvblNsYXllcjtcclxuICAgIHZhbHVlLm5hbWUgPSBcIlRoZSBEcmFnb24gU2xheWVyXCI7XHJcblxyXG4gICAgcmV0dXJuIHZhbHVlO1xyXG59XHJcbmZ1bmN0aW9uIGdldFNjaG9sYXIodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiU2Nob2xhclwiLCB0eHQpO1xyXG4gICAgaWYodmFsdWUgPT0gbnVsbCkgcmV0dXJuIG51bGw7XHJcbiAgICBpZihPYmplY3Qua2V5cyh2YWx1ZSkubGVuZ3RoID09PSAwKSByZXR1cm4gbnVsbDtcclxuXHJcbiAgICB2YWx1ZS5kYXRhID0gdmFsdWUuZGF0YS5zcGxpdChcIi5cIikubWFwKGVsID0+IHBhcnNlSW50KGVsKSk7XHJcbiAgICB2YWx1ZS5jb21wbGV0ZWQgPSB2YWx1ZS5kYXRhLmxlbmd0aCA+PSBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLnNjaG9sYXI7XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgU2Nob2xhclwiO1xyXG5cclxuICAgIHJldHVybiB2YWx1ZTtcclxufVxyXG5mdW5jdGlvbiBnZXRGcmllbmQodHh0KSB7XHJcbiAgICAvL2ZpcnN0LCBzZWUgaWYgaXQgZXhpc3RzXHJcbiAgICBjb25zdCB2YWx1ZSA9IGZpbmRBY2hpZXZlbWVudFZhbHVlKFwiRnJpZW5kXCIsIHR4dCk7XHJcbiAgICBpZih2YWx1ZSA9PSBudWxsKSByZXR1cm4gbnVsbDtcclxuICAgIGlmKE9iamVjdC5rZXlzKHZhbHVlKS5sZW5ndGggPT09IDApIHJldHVybiBudWxsO1xyXG5cclxuICAgIHZhbHVlLmNvbXBsZXRlZCA9IHBhcnNlRmxvYXQodmFsdWUuZGF0YSkgPj0gUlcuQWNoaWV2ZW1lbnRQb2ludFJlcXVpcmVtZW50cy5mcmllbmQ7XHJcbiAgICB2YWx1ZS5uYW1lID0gXCJUaGUgRnJpZW5kXCI7XHJcblxyXG4gICAgcmV0dXJuIHZhbHVlO1xyXG59XHJcblxyXG5cclxuXHJcblxyXG5cclxuXHJcblxyXG5mdW5jdGlvbiBfcmV2ZXJzZURhdGFBcnJheShkYXRhQXJyYXkpIHtcclxuICAgIGxldCByZXN1bHQgPSBbXTtcclxuICAgIGZvcihsZXQgaSA9IDA7IGkgPCBkYXRhQXJyYXkubGVuZ3RoOyBpKyspXHJcbiAgICAgICAgaWYoZGF0YUFycmF5W2ldID09IFwiMVwiKSByZXN1bHQucHVzaChcIjBcIik7XHJcbiAgICAgICAgZWxzZSByZXN1bHQucHVzaChcIjFcIik7XHJcbiAgICByZXR1cm4gcmVzdWx0O1xyXG59XHJcblxyXG5cclxuXHJcblxyXG5cclxuZnVuY3Rpb24gX2dldExpemFyZHNBcnJheShkYXRhQXJyYXkpIHtcclxuICAgIGxldCBsaXphcmRBcnJheSA9IFtdO1xyXG4gICAgZm9yKGxldCBpID0gMDsgaSA8IGRhdGFBcnJheS5sZW5ndGg7IGkrKykge1xyXG4gICAgICAgIGlmKGRhdGFBcnJheVtpXSA9PSBcIjFcIikge1xyXG4gICAgICAgICAgICBzd2l0Y2goaSkge1xyXG4gICAgICAgICAgICAgICAgY2FzZSAwOiBsaXphcmRBcnJheS5wdXNoKFwiZ3JlZW5cIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSAxOiBsaXphcmRBcnJheS5wdXNoKFwibWFnZW50YVwiKTsgYnJlYWs7XHJcbiAgICAgICAgICAgICAgICBjYXNlIDI6IGxpemFyZEFycmF5LnB1c2goXCJibHVlXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgMzogbGl6YXJkQXJyYXkucHVzaChcIndoaXRlXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgNDogbGl6YXJkQXJyYXkucHVzaChcInllbGxvd1wiKTsgYnJlYWs7XHJcbiAgICAgICAgICAgICAgICBjYXNlIDU6IGxpemFyZEFycmF5LnB1c2goXCJibGFja1wiKTtcclxuICAgICAgICAgICAgfVxyXG4gICAgICAgIH1cclxuICAgIH1cclxuICAgIHJldHVybiBsaXphcmRBcnJheTtcclxufVxyXG5cclxuXHJcbmZ1bmN0aW9uIF9nZXRQbGFjZXNBcnJheShkYXRhQXJyYXkpIHtcclxuICAgIGxldCBwbGFjZXNBcnJheSA9IFtdO1xyXG4gICAgZm9yKGxldCBpID0gMDsgaSA8IGRhdGFBcnJheS5sZW5ndGg7IGkrKykge1xyXG4gICAgICAgIGlmKGRhdGFBcnJheVtpXSA9PSBcIjFcIikge1xyXG4gICAgICAgICAgICBzd2l0Y2goaSkge1xyXG4gICAgICAgICAgICAgICAgY2FzZSAwOiBwbGFjZXNBcnJheS5wdXNoKFwiT3V0c2tpcnRzXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgMTogcGxhY2VzQXJyYXkucHVzaChcIkluZHVzdHJpYWwgQ29tcGxleFwiKTsgYnJlYWs7XHJcbiAgICAgICAgICAgICAgICBjYXNlIDI6IHBsYWNlc0FycmF5LnB1c2goXCJEcmFpbmFnZSBTeXN0ZW1cIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSAzOiBwbGFjZXNBcnJheS5wdXNoKFwiQ2hpbW5leSBDYW5vcHlcIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSA0OiBwbGFjZXNBcnJheS5wdXNoKFwiR2FyYmFnZSBXYXN0ZXNcIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSA1OiBwbGFjZXNBcnJheS5wdXNoKFwiU2hhZGVkIENpdGFkZWxcIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSA2OiBwbGFjZXNBcnJheS5wdXNoKFwiU2hvcmVsaW5lXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgNzogcGxhY2VzQXJyYXkucHVzaChcIlNreSBJc2xhbmRzXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgODogcGxhY2VzQXJyYXkucHVzaChcIkZhcm0gQXJyYXlzXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgOTogcGxhY2VzQXJyYXkucHVzaChcIkV4dGVyaW9yXCIpOyBicmVhaztcclxuICAgICAgICAgICAgICAgIGNhc2UgMTA6IHBsYWNlc0FycmF5LnB1c2goXCJGaXZlIFBlYmJsZXNcIik7IGJyZWFrO1xyXG4gICAgICAgICAgICAgICAgY2FzZSAxMTogcGxhY2VzQXJyYXkucHVzaChcIlN1YnRlcnJhbmVhblwiKTsgYnJlYWs7XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICB9XHJcbiAgICByZXR1cm4gcGxhY2VzQXJyYXk7XHJcbn1cclxuXHJcblxyXG5cclxuZnVuY3Rpb24gX2dldEtpbGxzQXJyYXkoZGF0YUFycmF5KSB7XHJcbiAgICBsZXQga2lsbHNBcnJheSA9IFtdO1xyXG59Il0sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/Parser.js\n");
+
+/***/ }),
+
+/***/ "./src/Score.js":
+/*!**********************!*\
+  !*** ./src/Score.js ***!
+  \**********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"default\": () => (/* binding */ Score)\n/* harmony export */ });\n/* harmony import */ var _Log__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Log */ \"./src/Log.js\");\n\r\n\r\nclass Score {\r\n    constructor() {\r\n        Score.data = null;\r\n\r\n        document.querySelector(\".current-score .btn-stats\").addEventListener(\"click\", () => {\r\n            if(Score.data == null) return;\r\n            _Log__WEBPACK_IMPORTED_MODULE_0__.default.show(Score.data);\r\n        });\r\n\r\n        document.querySelector(\".current-score .btn-close\").addEventListener(\"click\", () => {\r\n            Score.hide(); \r\n        });\r\n    }\r\n\r\n    static show(data) {\r\n        const score = (data != null) ? _Log__WEBPACK_IMPORTED_MODULE_0__.default.compute(data) : 0;\r\n        document.querySelector(\".current-score .score\").innerHTML = score;\r\n        document.querySelector(\".current-score\").classList.remove(\"hide\");\r\n        Score.data = data;\r\n    }\r\n\r\n    static hide() {\r\n        Score.data = null;\r\n        document.querySelector(\".current-score\").classList.add(\"hide\");\r\n    }\r\n}//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9TY29yZS5qcz9mNDE5Il0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7O0FBQXdCOztBQUVUO0FBQ2Y7QUFDQTs7QUFFQTtBQUNBO0FBQ0EsWUFBWSw4Q0FBUTtBQUNwQixTQUFTOztBQUVUO0FBQ0EseUI7QUFDQSxTQUFTO0FBQ1Q7O0FBRUE7QUFDQSx1Q0FBdUMsaURBQVc7QUFDbEQ7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQSIsImZpbGUiOiIuL3NyYy9TY29yZS5qcy5qcyIsInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBMb2cgZnJvbSAnLi9Mb2cnO1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgY2xhc3MgU2NvcmUge1xyXG4gICAgY29uc3RydWN0b3IoKSB7XHJcbiAgICAgICAgU2NvcmUuZGF0YSA9IG51bGw7XHJcblxyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIuY3VycmVudC1zY29yZSAuYnRuLXN0YXRzXCIpLmFkZEV2ZW50TGlzdGVuZXIoXCJjbGlja1wiLCAoKSA9PiB7XHJcbiAgICAgICAgICAgIGlmKFNjb3JlLmRhdGEgPT0gbnVsbCkgcmV0dXJuO1xyXG4gICAgICAgICAgICBMb2cuc2hvdyhTY29yZS5kYXRhKTtcclxuICAgICAgICB9KTtcclxuXHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5jdXJyZW50LXNjb3JlIC5idG4tY2xvc2VcIikuYWRkRXZlbnRMaXN0ZW5lcihcImNsaWNrXCIsICgpID0+IHtcclxuICAgICAgICAgICAgU2NvcmUuaGlkZSgpOyBcclxuICAgICAgICB9KTtcclxuICAgIH1cclxuXHJcbiAgICBzdGF0aWMgc2hvdyhkYXRhKSB7XHJcbiAgICAgICAgY29uc3Qgc2NvcmUgPSAoZGF0YSAhPSBudWxsKSA/IExvZy5jb21wdXRlKGRhdGEpIDogMDtcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmN1cnJlbnQtc2NvcmUgLnNjb3JlXCIpLmlubmVySFRNTCA9IHNjb3JlO1xyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIuY3VycmVudC1zY29yZVwiKS5jbGFzc0xpc3QucmVtb3ZlKFwiaGlkZVwiKTtcclxuICAgICAgICBTY29yZS5kYXRhID0gZGF0YTtcclxuICAgIH1cclxuXHJcbiAgICBzdGF0aWMgaGlkZSgpIHtcclxuICAgICAgICBTY29yZS5kYXRhID0gbnVsbDtcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmN1cnJlbnQtc2NvcmVcIikuY2xhc3NMaXN0LmFkZChcImhpZGVcIik7XHJcbiAgICB9XHJcbn0iXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/Score.js\n");
+
+/***/ }),
+
+/***/ "./src/constants.js":
+/*!**************************!*\
+  !*** ./src/constants.js ***!
+  \**************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"RegionLookup\": () => (/* binding */ RegionLookup),\n/* harmony export */   \"DefaultScores\": () => (/* binding */ DefaultScores),\n/* harmony export */   \"CreatureLookup\": () => (/* binding */ CreatureLookup),\n/* harmony export */   \"AchievementPointRequirements\": () => (/* binding */ AchievementPointRequirements),\n/* harmony export */   \"KarmaAtlasSize\": () => (/* binding */ KarmaAtlasSize),\n/* harmony export */   \"KarmaCapTracker\": () => (/* binding */ KarmaCapTracker),\n/* harmony export */   \"SpriteAtlasSize\": () => (/* binding */ SpriteAtlasSize),\n/* harmony export */   \"SpriteAtlasIndex\": () => (/* binding */ SpriteAtlasIndex),\n/* harmony export */   \"CreatureKillTemplate\": () => (/* binding */ CreatureKillTemplate),\n/* harmony export */   \"LogItemTemplate\": () => (/* binding */ LogItemTemplate),\n/* harmony export */   \"LogItemTotalTemplate\": () => (/* binding */ LogItemTotalTemplate)\n/* harmony export */ });\nconst RegionLookup = Object.freeze({\r\n    \"Outskirts\" : \"os\",\r\n    \"Industrial Complex\" : \"ic\",\r\n    \"Drainage System\" : \"ds\",\r\n    \"Chimney Canopy\" : \"cc\",\r\n    \"Garbage Wastes\" : \"gw\",\r\n    \"Shaded Citadel\" : \"sh\",\r\n    \"Shoreline\" : \"sl\",\r\n    \"Sky Islands\" : \"si\",\r\n    \"Farm Arrays\" : \"fa\",\r\n    \"Exterior\" : \"ex\",\r\n    \"Five Pebbles\" : \"fp\",\r\n    \"Subterranean\" : \"sb\",\r\n    \"Depths\" : \"dp\"\r\n});\r\n\r\n\r\nconst DefaultScores = Object.freeze({\r\n    \"Food\" : 1,\r\n    \"Survival\" : 5\r\n});\r\n\r\n//scores are in SandboxSettingsInterface | IDs are in MultiplayerUnlocks - SandboxUnlockID\r\n//the image IDs are CreatureTemplate.Type references, however\r\nconst CreatureLookup = Object.freeze({\r\n    \"Slugcat\" : {name:\"Slugcat\", id:1, score:5},\r\n    \"GreenLizard\" : {name:\"Green Lizard\", id:4, score:10},\r\n    \"PinkLizard\" : {name:\"Pink Lizard\", id:3, score:7},\r\n    \"BlueLizard\" : {name:\"Blue Lizard\", id:5, score:6},\r\n    \"WhiteLizard\" : {name:\"White Lizard\", id:7, score:8},\r\n    \"BlackLizard\" : {name:\"Black Lizard\", id:9, score:7},\r\n    \"YellowLizard\" : {name:\"Yellow Lizard\", id:6, score:6},\r\n    \"CyanLizard\" : {name:\"Cyan Lizard\", id:11, score:9},\r\n    \"RedLizard\" : {name:\"Red Lizard\", id:8, score:25},\r\n    \"Salamander\" : {name:\"salamander\", id:10, score:7},\r\n    \"CicadaA\" : {name:\"White Cicada\", id:19, score:2},\r\n    \"CicadaB\" : {name:\"Black Cicada\", id:20, score:2},\r\n    \"Snail\" : {name:\"Snail\", id:15, score:1},\r\n    \"PoleMimic\" : {name:\"Pole Plant\", id:29, score:2},\r\n    \"TentaclePlant\" : {name:\"Monster Kelp\", id:28, score:7},\r\n    \"Scavenger\" : {name:\"Scavenger\", id:36, score:6},\r\n    \"Vulture\" : {name:\"Vulture\", id:16, score:15},\r\n    \"KingVulture\" : {name:\"King Vulture\", id:45, score:25},\r\n    // \"SmallCentipede\" : {name:\"Small Centipede\", id:321, score:4},  //added their variant to the ID\r\n    \"SmallCentipede\" : {name:\"Small Centipede\", id:322, score:7},  //added their variant to the ID\r\n    // \"Centipede\" : {name:\"Centipede\", id:322, score:7},\r\n    \"Centipede\" : {name:\"Centipede\", id:321, score:7},\r\n    \"LargeCentipede\" : {name:\"Large Centipede\", id:323, score:7},\r\n    \"RedCentipede\" : {name:\"Red Centipede\", id:33, score:19},\r\n    \"Centiwing\" : {name:\"Centiwing\", id:34, score:5},\r\n    \"Tubeworm\" : {name:\"Garbage Worm\", id:25, score:1},\r\n    \"Hazer\" : {name:\"Hazer\", id:46, score:1},\r\n    \"LanternMouse\" : {name:\"Lantern Mouse\", id:18, score:2},\r\n    \"BigSpider\" : {name:\"Spider\", id:40, score:4},\r\n    \"SpitterSpider\" : {name:\"Tranq Spider\", id:41, score:5},\r\n    \"MirosBird\" : {name:\"Scissorbird\", id:30, score:16},\r\n    \"BrotherLongLegs\" : {name:\"Brother Long Legs\", id:27, score:14},\r\n    \"DaddyLongLegs\" : {name:\"Daddy Long Legs\", id:26, score:25},\r\n    \"Deer\" : {name:\"Raindeer\", id:24, score:1},\r\n    \"EggBug\" : {name:\"Egg Bug\", id:39, score:2},\r\n    \"DropBug\" : {name:\"Dropwig\", id:44, score:5},\r\n    \"BigNeedleWorm\" : {name:\"Noodlefly\", id:43, score:5},\r\n    \"JetFish\" : {name:\"Jet Fish\", id:22, score:4},\r\n    \"Leviathan\" : {name:\"Leviathan\", id:23, score:25},\r\n    \"Overseer\" : {name:\"Overseer\", id:37, score:1},\r\n});\r\n\r\n\r\n// found in WinState under CreateAndAddTracker\r\nconst AchievementPointRequirements = Object.freeze({\r\n    \"survivor\" : 5,\r\n    \"hunter\": 12,\r\n    \"saint\" : 12,\r\n    \"traveller\" : 12,\r\n    \"chieftain\" : 1,\r\n    \"monk\" : 12,\r\n    \"outlaw\" : 7,\r\n    \"dragonSlayer\": 6,\r\n    \"scholar\" : 3,\r\n    \"friend\" : 1,\r\n});\r\n\r\n\r\nconst KarmaAtlasSize = Object.freeze({\r\n    \"width\" : 90,\r\n    \"height\" : 90\r\n});\r\nconst KarmaCapTracker = Object.freeze({\r\n    \"9\" : 0,\r\n    \"8\" : 1,\r\n    \"7\" : 2,\r\n    \"6\" : 3,\r\n    \"5\" : 4,\r\n    \"4\" : 4,\r\n    \"3\" : 4,\r\n    \"2\" : 4,\r\n    \"1\" : 4,\r\n    \"0\" : 4\r\n});\r\n\r\n//large centipede is 32-0-3\r\n//med is 32-0-2\r\n//small is 32-0-1\r\n\r\n//31*26\r\nconst SpriteAtlasSize = Object.freeze({\r\n    \"width\" : 31,\r\n    \"height\" : 26\r\n});\r\nconst SpriteAtlasIndex = Object.freeze({\r\n    \"Leviathan\" : {x:0,y:0},\r\n    \"Slugcat\" : {x:1,y:0},\r\n    \"GreenLizard\" : {x:2,y:0},\r\n    \"PinkLizard\" : {x:3,y:0},\r\n    \"BlueLizard\" : {x:5,y:0},\r\n    \"WhiteLizard\" : {x:0,y:1},\r\n    \"BlackLizard\" : {x:1,y:1},\r\n    \"YellowLizard\" : {x:2,y:1},\r\n    \"CyanLizard\" : {x:3,y:1},\r\n    \"RedLizard\" : {x:4,y:1},\r\n    \"Salamander\" : {x:5,y:1},\r\n    \"CicadaA\" : {x:0,y:2},\r\n    \"CicadaB\" : {x:1,y:2},\r\n    \"Snail\" : {x:2,y:2},\r\n    \"PoleMimic\" : {x:3,y:2},\r\n    \"TentaclePlant\" : {x:4,y:2},\r\n    \"Scavenger\" : {x:5,y:2},\r\n    \"Vulture\" : {x:0,y:3},\r\n    \"KingVulture\" : {x:1,y:3},\r\n    \"SmallCentipede\" : {x:2,y:3},\r\n    \"Centipede\" : {x:3,y:3},\r\n    \"LargeCentipede\" : {x:4,y:3},\r\n    \"RedCentipede\" : {x:5,y:3},\r\n    \"Centiwing\" : {x:0,y:4},\r\n    \"LanternMouse\" : {x:1,y:4},\r\n    \"BigSpider\" : {x:2,y:4},\r\n    \"SpitterSpider\" : {x:3,y:4},\r\n    \"MirosBird\" : {x:4,y:4},\r\n    \"BrotherLongLegs\" : {x:5,y:4},\r\n    \"DaddyLongLegs\" : {x:0,y:5},\r\n    \"EggBug\" : {x:1,y:5},\r\n    \"DropBug\" : {x:2,y:5},\r\n    \"BigNeedleWorm\" : {x:3,y:5},\r\n    \"JetFish\" : {x:4,y:5},\r\n    \"Deer\" : {x:5,y:5},\r\n    \"Overseer\" : {x:4,y:0},\r\n    \"Hazer\"  : {x:0, y:6}\r\n});\r\n\r\n\r\n//get the creature kill template\r\nconst CreatureKillTemplate = document.querySelector(\".creature-kill\");\r\nCreatureKillTemplate.remove();\r\n\r\n\r\n//get the log item template\r\nconst LogItemTemplate = document.querySelector(\".log-item\");\r\nLogItemTemplate.remove();\r\n\r\n//get the total template\r\nconst LogItemTotalTemplate = document.querySelector(\".log-item.full-total\");\r\nLogItemTotalTemplate.remove();\r\n\r\n\r\n\r\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9jb25zdGFudHMuanM/Y2MzMSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7Ozs7Ozs7Ozs7OztBQUFBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSxDQUFDOzs7QUFHRDtBQUNBO0FBQ0E7QUFDQSxDQUFDOztBQUVEO0FBQ0E7QUFDQTtBQUNBLGlCQUFpQiw4QkFBOEI7QUFDL0MscUJBQXFCLG9DQUFvQztBQUN6RCxvQkFBb0Isa0NBQWtDO0FBQ3RELG9CQUFvQixrQ0FBa0M7QUFDdEQscUJBQXFCLG1DQUFtQztBQUN4RCxxQkFBcUIsbUNBQW1DO0FBQ3hELHNCQUFzQixvQ0FBb0M7QUFDMUQsb0JBQW9CLG1DQUFtQztBQUN2RCxtQkFBbUIsa0NBQWtDO0FBQ3JELG9CQUFvQixrQ0FBa0M7QUFDdEQsaUJBQWlCLG9DQUFvQztBQUNyRCxpQkFBaUIsb0NBQW9DO0FBQ3JELGVBQWUsNkJBQTZCO0FBQzVDLG1CQUFtQixrQ0FBa0M7QUFDckQsdUJBQXVCLG9DQUFvQztBQUMzRCxtQkFBbUIsaUNBQWlDO0FBQ3BELGlCQUFpQixnQ0FBZ0M7QUFDakQscUJBQXFCLHFDQUFxQztBQUMxRCwyQkFBMkIsd0NBQXdDO0FBQ25FLHdCQUF3Qix3Q0FBd0M7QUFDaEUsc0JBQXNCLGtDQUFrQztBQUN4RCxtQkFBbUIsa0NBQWtDO0FBQ3JELHdCQUF3Qix3Q0FBd0M7QUFDaEUsc0JBQXNCLHNDQUFzQztBQUM1RCxtQkFBbUIsaUNBQWlDO0FBQ3BELGtCQUFrQixvQ0FBb0M7QUFDdEQsZUFBZSw2QkFBNkI7QUFDNUMsc0JBQXNCLHFDQUFxQztBQUMzRCxtQkFBbUIsOEJBQThCO0FBQ2pELHVCQUF1QixvQ0FBb0M7QUFDM0QsbUJBQW1CLG9DQUFvQztBQUN2RCx5QkFBeUIsMENBQTBDO0FBQ25FLHVCQUF1Qix3Q0FBd0M7QUFDL0QsY0FBYyxnQ0FBZ0M7QUFDOUMsZ0JBQWdCLCtCQUErQjtBQUMvQyxpQkFBaUIsK0JBQStCO0FBQ2hELHVCQUF1QixpQ0FBaUM7QUFDeEQsaUJBQWlCLGdDQUFnQztBQUNqRCxtQkFBbUIsa0NBQWtDO0FBQ3JELGtCQUFrQixnQ0FBZ0M7QUFDbEQsQ0FBQzs7O0FBR0Q7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsQ0FBQzs7O0FBR0Q7QUFDQTtBQUNBO0FBQ0EsQ0FBQztBQUNEO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSxDQUFDOztBQUVEO0FBQ0E7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLENBQUM7QUFDRDtBQUNBLG1CQUFtQixRQUFRO0FBQzNCLGlCQUFpQixRQUFRO0FBQ3pCLHFCQUFxQixRQUFRO0FBQzdCLG9CQUFvQixRQUFRO0FBQzVCLG9CQUFvQixRQUFRO0FBQzVCLHFCQUFxQixRQUFRO0FBQzdCLHFCQUFxQixRQUFRO0FBQzdCLHNCQUFzQixRQUFRO0FBQzlCLG9CQUFvQixRQUFRO0FBQzVCLG1CQUFtQixRQUFRO0FBQzNCLG9CQUFvQixRQUFRO0FBQzVCLGlCQUFpQixRQUFRO0FBQ3pCLGlCQUFpQixRQUFRO0FBQ3pCLGVBQWUsUUFBUTtBQUN2QixtQkFBbUIsUUFBUTtBQUMzQix1QkFBdUIsUUFBUTtBQUMvQixtQkFBbUIsUUFBUTtBQUMzQixpQkFBaUIsUUFBUTtBQUN6QixxQkFBcUIsUUFBUTtBQUM3Qix3QkFBd0IsUUFBUTtBQUNoQyxtQkFBbUIsUUFBUTtBQUMzQix3QkFBd0IsUUFBUTtBQUNoQyxzQkFBc0IsUUFBUTtBQUM5QixtQkFBbUIsUUFBUTtBQUMzQixzQkFBc0IsUUFBUTtBQUM5QixtQkFBbUIsUUFBUTtBQUMzQix1QkFBdUIsUUFBUTtBQUMvQixtQkFBbUIsUUFBUTtBQUMzQix5QkFBeUIsUUFBUTtBQUNqQyx1QkFBdUIsUUFBUTtBQUMvQixnQkFBZ0IsUUFBUTtBQUN4QixpQkFBaUIsUUFBUTtBQUN6Qix1QkFBdUIsUUFBUTtBQUMvQixpQkFBaUIsUUFBUTtBQUN6QixjQUFjLFFBQVE7QUFDdEIsa0JBQWtCLFFBQVE7QUFDMUIsZ0JBQWdCO0FBQ2hCLENBQUM7OztBQUdEO0FBQ0E7QUFDQTs7O0FBR0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQSIsImZpbGUiOiIuL3NyYy9jb25zdGFudHMuanMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJjb25zdCBSZWdpb25Mb29rdXAgPSBPYmplY3QuZnJlZXplKHtcclxuICAgIFwiT3V0c2tpcnRzXCIgOiBcIm9zXCIsXHJcbiAgICBcIkluZHVzdHJpYWwgQ29tcGxleFwiIDogXCJpY1wiLFxyXG4gICAgXCJEcmFpbmFnZSBTeXN0ZW1cIiA6IFwiZHNcIixcclxuICAgIFwiQ2hpbW5leSBDYW5vcHlcIiA6IFwiY2NcIixcclxuICAgIFwiR2FyYmFnZSBXYXN0ZXNcIiA6IFwiZ3dcIixcclxuICAgIFwiU2hhZGVkIENpdGFkZWxcIiA6IFwic2hcIixcclxuICAgIFwiU2hvcmVsaW5lXCIgOiBcInNsXCIsXHJcbiAgICBcIlNreSBJc2xhbmRzXCIgOiBcInNpXCIsXHJcbiAgICBcIkZhcm0gQXJyYXlzXCIgOiBcImZhXCIsXHJcbiAgICBcIkV4dGVyaW9yXCIgOiBcImV4XCIsXHJcbiAgICBcIkZpdmUgUGViYmxlc1wiIDogXCJmcFwiLFxyXG4gICAgXCJTdWJ0ZXJyYW5lYW5cIiA6IFwic2JcIixcclxuICAgIFwiRGVwdGhzXCIgOiBcImRwXCJcclxufSk7XHJcblxyXG5cclxuY29uc3QgRGVmYXVsdFNjb3JlcyA9IE9iamVjdC5mcmVlemUoe1xyXG4gICAgXCJGb29kXCIgOiAxLFxyXG4gICAgXCJTdXJ2aXZhbFwiIDogNVxyXG59KTtcclxuXHJcbi8vc2NvcmVzIGFyZSBpbiBTYW5kYm94U2V0dGluZ3NJbnRlcmZhY2UgfCBJRHMgYXJlIGluIE11bHRpcGxheWVyVW5sb2NrcyAtIFNhbmRib3hVbmxvY2tJRFxyXG4vL3RoZSBpbWFnZSBJRHMgYXJlIENyZWF0dXJlVGVtcGxhdGUuVHlwZSByZWZlcmVuY2VzLCBob3dldmVyXHJcbmNvbnN0IENyZWF0dXJlTG9va3VwID0gT2JqZWN0LmZyZWV6ZSh7XHJcbiAgICBcIlNsdWdjYXRcIiA6IHtuYW1lOlwiU2x1Z2NhdFwiLCBpZDoxLCBzY29yZTo1fSxcclxuICAgIFwiR3JlZW5MaXphcmRcIiA6IHtuYW1lOlwiR3JlZW4gTGl6YXJkXCIsIGlkOjQsIHNjb3JlOjEwfSxcclxuICAgIFwiUGlua0xpemFyZFwiIDoge25hbWU6XCJQaW5rIExpemFyZFwiLCBpZDozLCBzY29yZTo3fSxcclxuICAgIFwiQmx1ZUxpemFyZFwiIDoge25hbWU6XCJCbHVlIExpemFyZFwiLCBpZDo1LCBzY29yZTo2fSxcclxuICAgIFwiV2hpdGVMaXphcmRcIiA6IHtuYW1lOlwiV2hpdGUgTGl6YXJkXCIsIGlkOjcsIHNjb3JlOjh9LFxyXG4gICAgXCJCbGFja0xpemFyZFwiIDoge25hbWU6XCJCbGFjayBMaXphcmRcIiwgaWQ6OSwgc2NvcmU6N30sXHJcbiAgICBcIlllbGxvd0xpemFyZFwiIDoge25hbWU6XCJZZWxsb3cgTGl6YXJkXCIsIGlkOjYsIHNjb3JlOjZ9LFxyXG4gICAgXCJDeWFuTGl6YXJkXCIgOiB7bmFtZTpcIkN5YW4gTGl6YXJkXCIsIGlkOjExLCBzY29yZTo5fSxcclxuICAgIFwiUmVkTGl6YXJkXCIgOiB7bmFtZTpcIlJlZCBMaXphcmRcIiwgaWQ6OCwgc2NvcmU6MjV9LFxyXG4gICAgXCJTYWxhbWFuZGVyXCIgOiB7bmFtZTpcInNhbGFtYW5kZXJcIiwgaWQ6MTAsIHNjb3JlOjd9LFxyXG4gICAgXCJDaWNhZGFBXCIgOiB7bmFtZTpcIldoaXRlIENpY2FkYVwiLCBpZDoxOSwgc2NvcmU6Mn0sXHJcbiAgICBcIkNpY2FkYUJcIiA6IHtuYW1lOlwiQmxhY2sgQ2ljYWRhXCIsIGlkOjIwLCBzY29yZToyfSxcclxuICAgIFwiU25haWxcIiA6IHtuYW1lOlwiU25haWxcIiwgaWQ6MTUsIHNjb3JlOjF9LFxyXG4gICAgXCJQb2xlTWltaWNcIiA6IHtuYW1lOlwiUG9sZSBQbGFudFwiLCBpZDoyOSwgc2NvcmU6Mn0sXHJcbiAgICBcIlRlbnRhY2xlUGxhbnRcIiA6IHtuYW1lOlwiTW9uc3RlciBLZWxwXCIsIGlkOjI4LCBzY29yZTo3fSxcclxuICAgIFwiU2NhdmVuZ2VyXCIgOiB7bmFtZTpcIlNjYXZlbmdlclwiLCBpZDozNiwgc2NvcmU6Nn0sXHJcbiAgICBcIlZ1bHR1cmVcIiA6IHtuYW1lOlwiVnVsdHVyZVwiLCBpZDoxNiwgc2NvcmU6MTV9LFxyXG4gICAgXCJLaW5nVnVsdHVyZVwiIDoge25hbWU6XCJLaW5nIFZ1bHR1cmVcIiwgaWQ6NDUsIHNjb3JlOjI1fSxcclxuICAgIC8vIFwiU21hbGxDZW50aXBlZGVcIiA6IHtuYW1lOlwiU21hbGwgQ2VudGlwZWRlXCIsIGlkOjMyMSwgc2NvcmU6NH0sICAvL2FkZGVkIHRoZWlyIHZhcmlhbnQgdG8gdGhlIElEXHJcbiAgICBcIlNtYWxsQ2VudGlwZWRlXCIgOiB7bmFtZTpcIlNtYWxsIENlbnRpcGVkZVwiLCBpZDozMjIsIHNjb3JlOjd9LCAgLy9hZGRlZCB0aGVpciB2YXJpYW50IHRvIHRoZSBJRFxyXG4gICAgLy8gXCJDZW50aXBlZGVcIiA6IHtuYW1lOlwiQ2VudGlwZWRlXCIsIGlkOjMyMiwgc2NvcmU6N30sXHJcbiAgICBcIkNlbnRpcGVkZVwiIDoge25hbWU6XCJDZW50aXBlZGVcIiwgaWQ6MzIxLCBzY29yZTo3fSxcclxuICAgIFwiTGFyZ2VDZW50aXBlZGVcIiA6IHtuYW1lOlwiTGFyZ2UgQ2VudGlwZWRlXCIsIGlkOjMyMywgc2NvcmU6N30sXHJcbiAgICBcIlJlZENlbnRpcGVkZVwiIDoge25hbWU6XCJSZWQgQ2VudGlwZWRlXCIsIGlkOjMzLCBzY29yZToxOX0sXHJcbiAgICBcIkNlbnRpd2luZ1wiIDoge25hbWU6XCJDZW50aXdpbmdcIiwgaWQ6MzQsIHNjb3JlOjV9LFxyXG4gICAgXCJUdWJld29ybVwiIDoge25hbWU6XCJHYXJiYWdlIFdvcm1cIiwgaWQ6MjUsIHNjb3JlOjF9LFxyXG4gICAgXCJIYXplclwiIDoge25hbWU6XCJIYXplclwiLCBpZDo0Niwgc2NvcmU6MX0sXHJcbiAgICBcIkxhbnRlcm5Nb3VzZVwiIDoge25hbWU6XCJMYW50ZXJuIE1vdXNlXCIsIGlkOjE4LCBzY29yZToyfSxcclxuICAgIFwiQmlnU3BpZGVyXCIgOiB7bmFtZTpcIlNwaWRlclwiLCBpZDo0MCwgc2NvcmU6NH0sXHJcbiAgICBcIlNwaXR0ZXJTcGlkZXJcIiA6IHtuYW1lOlwiVHJhbnEgU3BpZGVyXCIsIGlkOjQxLCBzY29yZTo1fSxcclxuICAgIFwiTWlyb3NCaXJkXCIgOiB7bmFtZTpcIlNjaXNzb3JiaXJkXCIsIGlkOjMwLCBzY29yZToxNn0sXHJcbiAgICBcIkJyb3RoZXJMb25nTGVnc1wiIDoge25hbWU6XCJCcm90aGVyIExvbmcgTGVnc1wiLCBpZDoyNywgc2NvcmU6MTR9LFxyXG4gICAgXCJEYWRkeUxvbmdMZWdzXCIgOiB7bmFtZTpcIkRhZGR5IExvbmcgTGVnc1wiLCBpZDoyNiwgc2NvcmU6MjV9LFxyXG4gICAgXCJEZWVyXCIgOiB7bmFtZTpcIlJhaW5kZWVyXCIsIGlkOjI0LCBzY29yZToxfSxcclxuICAgIFwiRWdnQnVnXCIgOiB7bmFtZTpcIkVnZyBCdWdcIiwgaWQ6MzksIHNjb3JlOjJ9LFxyXG4gICAgXCJEcm9wQnVnXCIgOiB7bmFtZTpcIkRyb3B3aWdcIiwgaWQ6NDQsIHNjb3JlOjV9LFxyXG4gICAgXCJCaWdOZWVkbGVXb3JtXCIgOiB7bmFtZTpcIk5vb2RsZWZseVwiLCBpZDo0Mywgc2NvcmU6NX0sXHJcbiAgICBcIkpldEZpc2hcIiA6IHtuYW1lOlwiSmV0IEZpc2hcIiwgaWQ6MjIsIHNjb3JlOjR9LFxyXG4gICAgXCJMZXZpYXRoYW5cIiA6IHtuYW1lOlwiTGV2aWF0aGFuXCIsIGlkOjIzLCBzY29yZToyNX0sXHJcbiAgICBcIk92ZXJzZWVyXCIgOiB7bmFtZTpcIk92ZXJzZWVyXCIsIGlkOjM3LCBzY29yZToxfSxcclxufSk7XHJcblxyXG5cclxuLy8gZm91bmQgaW4gV2luU3RhdGUgdW5kZXIgQ3JlYXRlQW5kQWRkVHJhY2tlclxyXG5jb25zdCBBY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzID0gT2JqZWN0LmZyZWV6ZSh7XHJcbiAgICBcInN1cnZpdm9yXCIgOiA1LFxyXG4gICAgXCJodW50ZXJcIjogMTIsXHJcbiAgICBcInNhaW50XCIgOiAxMixcclxuICAgIFwidHJhdmVsbGVyXCIgOiAxMixcclxuICAgIFwiY2hpZWZ0YWluXCIgOiAxLFxyXG4gICAgXCJtb25rXCIgOiAxMixcclxuICAgIFwib3V0bGF3XCIgOiA3LFxyXG4gICAgXCJkcmFnb25TbGF5ZXJcIjogNixcclxuICAgIFwic2Nob2xhclwiIDogMyxcclxuICAgIFwiZnJpZW5kXCIgOiAxLFxyXG59KTtcclxuXHJcblxyXG5jb25zdCBLYXJtYUF0bGFzU2l6ZSA9IE9iamVjdC5mcmVlemUoe1xyXG4gICAgXCJ3aWR0aFwiIDogOTAsXHJcbiAgICBcImhlaWdodFwiIDogOTBcclxufSk7XHJcbmNvbnN0IEthcm1hQ2FwVHJhY2tlciA9IE9iamVjdC5mcmVlemUoe1xyXG4gICAgXCI5XCIgOiAwLFxyXG4gICAgXCI4XCIgOiAxLFxyXG4gICAgXCI3XCIgOiAyLFxyXG4gICAgXCI2XCIgOiAzLFxyXG4gICAgXCI1XCIgOiA0LFxyXG4gICAgXCI0XCIgOiA0LFxyXG4gICAgXCIzXCIgOiA0LFxyXG4gICAgXCIyXCIgOiA0LFxyXG4gICAgXCIxXCIgOiA0LFxyXG4gICAgXCIwXCIgOiA0XHJcbn0pO1xyXG5cclxuLy9sYXJnZSBjZW50aXBlZGUgaXMgMzItMC0zXHJcbi8vbWVkIGlzIDMyLTAtMlxyXG4vL3NtYWxsIGlzIDMyLTAtMVxyXG5cclxuLy8zMSoyNlxyXG5jb25zdCBTcHJpdGVBdGxhc1NpemUgPSBPYmplY3QuZnJlZXplKHtcclxuICAgIFwid2lkdGhcIiA6IDMxLFxyXG4gICAgXCJoZWlnaHRcIiA6IDI2XHJcbn0pO1xyXG5jb25zdCBTcHJpdGVBdGxhc0luZGV4ID0gT2JqZWN0LmZyZWV6ZSh7XHJcbiAgICBcIkxldmlhdGhhblwiIDoge3g6MCx5OjB9LFxyXG4gICAgXCJTbHVnY2F0XCIgOiB7eDoxLHk6MH0sXHJcbiAgICBcIkdyZWVuTGl6YXJkXCIgOiB7eDoyLHk6MH0sXHJcbiAgICBcIlBpbmtMaXphcmRcIiA6IHt4OjMseTowfSxcclxuICAgIFwiQmx1ZUxpemFyZFwiIDoge3g6NSx5OjB9LFxyXG4gICAgXCJXaGl0ZUxpemFyZFwiIDoge3g6MCx5OjF9LFxyXG4gICAgXCJCbGFja0xpemFyZFwiIDoge3g6MSx5OjF9LFxyXG4gICAgXCJZZWxsb3dMaXphcmRcIiA6IHt4OjIseToxfSxcclxuICAgIFwiQ3lhbkxpemFyZFwiIDoge3g6Myx5OjF9LFxyXG4gICAgXCJSZWRMaXphcmRcIiA6IHt4OjQseToxfSxcclxuICAgIFwiU2FsYW1hbmRlclwiIDoge3g6NSx5OjF9LFxyXG4gICAgXCJDaWNhZGFBXCIgOiB7eDowLHk6Mn0sXHJcbiAgICBcIkNpY2FkYUJcIiA6IHt4OjEseToyfSxcclxuICAgIFwiU25haWxcIiA6IHt4OjIseToyfSxcclxuICAgIFwiUG9sZU1pbWljXCIgOiB7eDozLHk6Mn0sXHJcbiAgICBcIlRlbnRhY2xlUGxhbnRcIiA6IHt4OjQseToyfSxcclxuICAgIFwiU2NhdmVuZ2VyXCIgOiB7eDo1LHk6Mn0sXHJcbiAgICBcIlZ1bHR1cmVcIiA6IHt4OjAseTozfSxcclxuICAgIFwiS2luZ1Z1bHR1cmVcIiA6IHt4OjEseTozfSxcclxuICAgIFwiU21hbGxDZW50aXBlZGVcIiA6IHt4OjIseTozfSxcclxuICAgIFwiQ2VudGlwZWRlXCIgOiB7eDozLHk6M30sXHJcbiAgICBcIkxhcmdlQ2VudGlwZWRlXCIgOiB7eDo0LHk6M30sXHJcbiAgICBcIlJlZENlbnRpcGVkZVwiIDoge3g6NSx5OjN9LFxyXG4gICAgXCJDZW50aXdpbmdcIiA6IHt4OjAseTo0fSxcclxuICAgIFwiTGFudGVybk1vdXNlXCIgOiB7eDoxLHk6NH0sXHJcbiAgICBcIkJpZ1NwaWRlclwiIDoge3g6Mix5OjR9LFxyXG4gICAgXCJTcGl0dGVyU3BpZGVyXCIgOiB7eDozLHk6NH0sXHJcbiAgICBcIk1pcm9zQmlyZFwiIDoge3g6NCx5OjR9LFxyXG4gICAgXCJCcm90aGVyTG9uZ0xlZ3NcIiA6IHt4OjUseTo0fSxcclxuICAgIFwiRGFkZHlMb25nTGVnc1wiIDoge3g6MCx5OjV9LFxyXG4gICAgXCJFZ2dCdWdcIiA6IHt4OjEseTo1fSxcclxuICAgIFwiRHJvcEJ1Z1wiIDoge3g6Mix5OjV9LFxyXG4gICAgXCJCaWdOZWVkbGVXb3JtXCIgOiB7eDozLHk6NX0sXHJcbiAgICBcIkpldEZpc2hcIiA6IHt4OjQseTo1fSxcclxuICAgIFwiRGVlclwiIDoge3g6NSx5OjV9LFxyXG4gICAgXCJPdmVyc2VlclwiIDoge3g6NCx5OjB9LFxyXG4gICAgXCJIYXplclwiICA6IHt4OjAsIHk6Nn1cclxufSk7XHJcblxyXG5cclxuLy9nZXQgdGhlIGNyZWF0dXJlIGtpbGwgdGVtcGxhdGVcclxuY29uc3QgQ3JlYXR1cmVLaWxsVGVtcGxhdGUgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmNyZWF0dXJlLWtpbGxcIik7XHJcbkNyZWF0dXJlS2lsbFRlbXBsYXRlLnJlbW92ZSgpO1xyXG5cclxuXHJcbi8vZ2V0IHRoZSBsb2cgaXRlbSB0ZW1wbGF0ZVxyXG5jb25zdCBMb2dJdGVtVGVtcGxhdGUgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmxvZy1pdGVtXCIpO1xyXG5Mb2dJdGVtVGVtcGxhdGUucmVtb3ZlKCk7XHJcblxyXG4vL2dldCB0aGUgdG90YWwgdGVtcGxhdGVcclxuY29uc3QgTG9nSXRlbVRvdGFsVGVtcGxhdGUgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmxvZy1pdGVtLmZ1bGwtdG90YWxcIik7XHJcbkxvZ0l0ZW1Ub3RhbFRlbXBsYXRlLnJlbW92ZSgpO1xyXG5cclxuXHJcblxyXG5leHBvcnQgeyBSZWdpb25Mb29rdXAsIERlZmF1bHRTY29yZXMsIENyZWF0dXJlTG9va3VwLCBcclxuICAgIEFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMsIEthcm1hQXRsYXNTaXplLCBLYXJtYUNhcFRyYWNrZXIsXHJcbiAgICBTcHJpdGVBdGxhc1NpemUsIFNwcml0ZUF0bGFzSW5kZXgsIFxyXG4gICAgQ3JlYXR1cmVLaWxsVGVtcGxhdGUsIExvZ0l0ZW1UZW1wbGF0ZSwgTG9nSXRlbVRvdGFsVGVtcGxhdGUgfTsiXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///./src/constants.js\n");
+
+/***/ }),
+
+/***/ "./src/layout.js":
+/*!***********************!*\
+  !*** ./src/layout.js ***!
+  \***********************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   \"default\": () => (/* binding */ Layout)\n/* harmony export */ });\n/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ \"./src/constants.js\");\n\r\n\r\nclass Layout {\r\n    static show(data) {\r\n        //first, clear the data\r\n        Layout.clear();\r\n        const { \r\n            totalTime, totalFood, cycles, extraCycles,\r\n            survives, deaths, quits, kills,\r\n            swallowedItem, helpedPebbles, deliveredPayload, ascended,\r\n            wanderer, scholar, survivor, outlaw, hunter, friend, monk, chieftain, saint, dragonSlayer,\r\n            karma, karmaCap\r\n        } = data;\r\n        \r\n        //general data\r\n        document.querySelector(\".totalTime\").innerHTML = totalTime;\r\n        document.querySelector(\".totalFood\").innerHTML = totalFood;\r\n        document.querySelector(\".totalCycles\").innerHTML = cycles;\r\n        document.querySelector(\".remainingCycles\").innerHTML = (20 - parseInt(cycles) + ((extraCycles) ? 5 : 0)) || \"\";\r\n        document.querySelector(\".survives\").innerHTML = survives;\r\n        document.querySelector(\".deaths\").innerHTML = deaths;\r\n        document.querySelector(\".quits\").innerHTML = quits;\r\n        document.querySelector(\".currentKarma\").innerHTML = karma;\r\n        document.querySelector(\".karmaCap\").innerHTML = karmaCap;\r\n        document.querySelector(\".quits\").innerHTML = quits;\r\n        document.querySelector(\".itemSwallowed\").innerText = (swallowedItem != \"\") ? swallowedItem : \"<None>\";\r\n        document.querySelector(\".helpedPebbles\").innerHTML = (helpedPebbles) ? \"Yes\" : \"No\";\r\n        document.querySelector(\".deliveredPayload\").innerHTML = (deliveredPayload) ? \"Yes\" : \"No\";\r\n        document.querySelector(\".ascended\").innerHTML = (ascended) ? \"Yes\" : \"No\";\r\n\r\n        //setup places\r\n        if(wanderer != null) {\r\n            //toggle unlocked on any that are completed\r\n            const divs = document.querySelectorAll(\"[data-region]\");\r\n            for(let i = 0; i < divs.length; i++) {\r\n                const regDiv = divs[i];\r\n                const fullName = getKeyByValue(_constants__WEBPACK_IMPORTED_MODULE_0__.RegionLookup, regDiv.dataset.region);\r\n                if(wanderer.visited.indexOf(fullName) != -1) regDiv.classList.add(\"unlocked\");\r\n                else regDiv.classList.remove(\"unlocked\");\r\n            }\r\n            //handle depths\r\n            if(ascended) document.querySelector(\"[data-region='dp']\").classList.add(\"unlocked\");\r\n            else document.querySelector(\"[data-region='dp']\").classList.remove(\"unlocked\");\r\n        }\r\n\r\n        //achievements\r\n        //survivor\r\n        if(survivor != null) {\r\n            //unhide others\r\n            document.querySelector(\".survivor-hidden\").classList.remove(\"hide\");\r\n            setupPipAchievement(\"survivor\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.survivor, survivor, true);\r\n        }\r\n        //wanderer\r\n        if(wanderer != null) {\r\n            setupPipAchievement(\"wanderer\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.traveller, wanderer);\r\n        }\r\n        //scholar\r\n        if(scholar != null) {\r\n            setupPipAchievement(\"scholar\",_constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.scholar, scholar);\r\n        }    \r\n        //outlaw\r\n        if(outlaw != null) {\r\n        setupIntAchievement(\"outlaw\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.outlaw, outlaw);\r\n        }\r\n        //hunter\r\n        if(hunter != null) {\r\n            setupIntAchievement(\"hunter\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.hunter, hunter);\r\n        }\r\n        //friend\r\n        if(friend != null) {\r\n            setupFloatAchievement(\"friend\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.friend, friend);\r\n        }\r\n        //monk\r\n        if(monk != null) {\r\n            setupIntAchievement(\"monk\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.monk, monk);\r\n        }\r\n        //chieftain\r\n        if(chieftain != null) {\r\n            setupFloatAchievement(\"chieftain\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.chieftain, chieftain);\r\n        }\r\n        //saint\r\n        if(saint != null) {\r\n            setupIntAchievement(\"saint\", _constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.saint, saint);\r\n        }\r\n        //dragonSlayer\r\n        if(dragonSlayer != null) {\r\n        setupDragonSlayer(_constants__WEBPACK_IMPORTED_MODULE_0__.AchievementPointRequirements.dragonSlayer, dragonSlayer);\r\n        }\r\n\r\n\r\n\r\n        //handle karma data\r\n        if(karma != null) {\r\n            const activeKarmaDiv = document.querySelector(\".karma.active\");\r\n            const inactiveKarmaDiv = document.querySelector(\".karma.inactive\");\r\n            //look for a karma cap\r\n            let cap = karmaCap || 4;\r\n            let currKarma = Math.min(karma, cap);\r\n            //compare for column index\r\n            const column = _constants__WEBPACK_IMPORTED_MODULE_0__.KarmaCapTracker[cap.toString()];\r\n            console.log(column);\r\n            //move to proper index\r\n            activeKarmaDiv.style.backgroundPositionX = \r\n                inactiveKarmaDiv.style.backgroundPositionX = `${-column * _constants__WEBPACK_IMPORTED_MODULE_0__.KarmaAtlasSize.width}px`;\r\n            //move dial to proper y position\r\n            //switch the active to the current type\r\n            const offsetY = (9 - currKarma  ) * _constants__WEBPACK_IMPORTED_MODULE_0__.KarmaAtlasSize.height;\r\n            activeKarmaDiv.style.backgroundPositionY = `-${offsetY}px`;\r\n            inactiveKarmaDiv.style.backgroundPositionY = `calc(-50% - ${offsetY + 75}px)`;\r\n\r\n        }\r\n\r\n\r\n\r\n        //handle kills data\r\n        if(kills != null) {\r\n            if(kills.length <= 0) return;\r\n            //order by biggest boy points\r\n            // kills.sort((a, b) => a.score > b.score ? -1 : 1);\r\n            //order by hierarchy\r\n            kills.sort((a, b) => {\r\n                const keys = Object.keys(_constants__WEBPACK_IMPORTED_MODULE_0__.SpriteAtlasIndex);\r\n                if(keys.indexOf(a.key) > keys.indexOf(b.key)) return 1;\r\n                else return -1;\r\n            });\r\n            for(let killData of kills) {\r\n                //create a kill template\r\n                const killDiv = _constants__WEBPACK_IMPORTED_MODULE_0__.CreatureKillTemplate.cloneNode(true);\r\n                killDiv.querySelector(\".kill-amount\").innerHTML = killData.kills;\r\n                killDiv.querySelector(\".kill-worth\").innerHTML = `x${killData.score}`;\r\n\r\n                \r\n                //get the icon\r\n                const position = _constants__WEBPACK_IMPORTED_MODULE_0__.SpriteAtlasIndex[killData.key];\r\n\r\n                const iconDiv = killDiv.querySelector(\".creature-icon\");\r\n                const x = position.x * _constants__WEBPACK_IMPORTED_MODULE_0__.SpriteAtlasSize.width;\r\n                const y = position.y * _constants__WEBPACK_IMPORTED_MODULE_0__.SpriteAtlasSize.height;\r\n                iconDiv.style.backgroundPositionX = `${-x}px`;\r\n                iconDiv.style.backgroundPositionY = `${-y}px`;\r\n\r\n                //add a hover\r\n                iconDiv.title = killDiv.querySelector(\".kill-amount\").title = killData.name;\r\n\r\n                //attach to container\r\n                document.querySelector(\".creature-kill-container\").appendChild(killDiv);\r\n\r\n                // return;\r\n            }\r\n        }\r\n    }\r\n\r\n\r\n    static clear() {\r\n        //relock map\r\n        const mapDivs = document.querySelectorAll(\"[data-region]\");\r\n        mapDivs.forEach((el) => el.classList.remove(\"unlocked\"));\r\n\r\n        //delete kills\r\n        const killDivs = document.querySelectorAll(\".creature-kill\");\r\n        killDivs.forEach((el) => {\r\n            el.remove();\r\n            el = null;\r\n        });\r\n\r\n\r\n        //reset achievements\r\n        const achieveDivs = document.querySelectorAll(\".achievement\");\r\n        achieveDivs.forEach((el) => {\r\n            el.classList.remove(\"complete\");\r\n            el.classList.add(\"inactive\");\r\n\r\n            const pips = el.querySelector(\".pips\");\r\n            if(pips != null) pips.innerHTML = \"\";\r\n        });\r\n\r\n    }\r\n}\r\n\r\n\r\n\r\nfunction setupPipAchievement(id, pointRequirement, obj, staticValue=false) {\r\n    const aDiv = document.querySelector(`[data-achievement='${id}']`);\r\n    aDiv.classList.remove(\"inactive\");\r\n    //set the pips\r\n    const pipsDiv = aDiv.querySelector(\".pips\");\r\n    // const length = (staticValue) ? parseInt(obj.data) : obj.data.length;\r\n    for(let i = 0; i < pointRequirement; i++) {\r\n        const pip = document.createElement(\"div\");\r\n        if(staticValue) { \r\n            if(parseInt(obj.data) > i) pip.classList.add(\"pip\", \"full\");\r\n            else pip.classList.add(\"pip\", \"empty\");\r\n        }\r\n        else {\r\n            if(obj.data[i] == 1) pip.classList.add(\"pip\", \"full\");\r\n            else if(obj.data[i] != 1 && obj.data[i] != 0 && i < obj.data.length) pip.classList.add(\"pip\", \"full\"); //data-pearl\r\n            else pip.classList.add(\"pip\", \"empty\");\r\n        }\r\n        pipsDiv.appendChild(pip);\r\n    }\r\n\r\n    const progressDiv = aDiv.querySelector(\".progress\");\r\n    if(pipsDiv.childNodes.length > 0) {\r\n        progressDiv.innerHTML = \"\";\r\n    }\r\n    if(obj.completed) aDiv.classList.add(\"complete\");\r\n}\r\n\r\nfunction setupIntAchievement(id, pointRequirement, obj) {\r\n    const aDiv = document.querySelector(`[data-achievement='${id}']`);\r\n    aDiv.classList.remove(\"inactive\");\r\n    //set the status\r\n    const statusDiv = aDiv.querySelector(\".status-bar .slider\");\r\n    const perc = (parseInt(obj.data) / pointRequirement) * 100;\r\n    statusDiv.style.left = `${perc}%`;\r\n\r\n    const progressDiv = aDiv.querySelector(\".progress\");\r\n    progressDiv.innerHTML = \"\";\r\n    if(obj.completed) aDiv.classList.add(\"complete\");\r\n\r\n    const countDiv = aDiv.querySelector(\".count\");\r\n    countDiv.innerHTML = `${parseInt(obj.data)}/${pointRequirement}`;\r\n}\r\n\r\nfunction setupFloatAchievement(id, pointRequirement, obj) {\r\n    const aDiv = document.querySelector(`[data-achievement='${id}']`);\r\n    aDiv.classList.remove(\"inactive\");\r\n    //set the status\r\n    const statusDiv = aDiv.querySelector(\".status-bar .slider\");\r\n    const perc = (parseFloat(obj.data) / pointRequirement) * 100;\r\n    statusDiv.style.left = `${perc}%`;\r\n\r\n    const progressDiv = aDiv.querySelector(\".progress\");\r\n    progressDiv.innerHTML = \"\";\r\n    if(obj.completed) aDiv.classList.add(\"complete\");\r\n\r\n    const countDiv = aDiv.querySelector(\".count\");\r\n    countDiv.innerHTML = `${parseFloat(obj.data).toFixed(2)}/${pointRequirement}`;\r\n}\r\n\r\nfunction setupDragonSlayer(pointRequirement, obj) {\r\n    const aDiv = document.querySelector(\"[data-achievement='dragonSlayer']\");\r\n    aDiv.classList.remove(\"inactive\");\r\n    //set the pips\r\n    const pipsDiv = aDiv.querySelector(\".pips\");\r\n    for(let i = 0; i < obj.data.length; i++) {\r\n        const pip = document.createElement(\"div\");\r\n        if(obj.data[i] == \"1\") pip.classList.add(\"pip\", \"full\", \"dragon-slayer\", `pip-${i}`);\r\n        else pip.classList.add(\"pip\", \"empty\");\r\n        pipsDiv.appendChild(pip);\r\n    }\r\n\r\n    if(obj.completed) aDiv.classList.add(\"complete\");\r\n}\r\n\r\n\r\nfunction getKeyByValue(object, value) {\r\n    return Object.keys(object).find(key => object[key] === value);\r\n}\r\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9sYXlvdXQuanM/YjU2OSJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOzs7OztBQUFrQzs7QUFFbkI7QUFDZjtBQUNBO0FBQ0E7QUFDQSxlO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLFNBQVM7O0FBRVQ7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsMEJBQTBCLGlCQUFpQjtBQUMzQztBQUNBLCtDQUErQyxvREFBZTtBQUM5RDtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsNENBQTRDLDZFQUF3QztBQUNwRjtBQUNBO0FBQ0E7QUFDQSw0Q0FBNEMsOEVBQXlDO0FBQ3JGO0FBQ0E7QUFDQTtBQUNBLDBDQUEwQyw0RUFBd0M7QUFDbEYsUztBQUNBO0FBQ0E7QUFDQSxzQ0FBc0MsMkVBQXNDO0FBQzVFO0FBQ0E7QUFDQTtBQUNBLDBDQUEwQywyRUFBc0M7QUFDaEY7QUFDQTtBQUNBO0FBQ0EsNENBQTRDLDJFQUFzQztBQUNsRjtBQUNBO0FBQ0E7QUFDQSx3Q0FBd0MseUVBQW9DO0FBQzVFO0FBQ0E7QUFDQTtBQUNBLCtDQUErQyw4RUFBeUM7QUFDeEY7QUFDQTtBQUNBO0FBQ0EseUNBQXlDLDBFQUFxQztBQUM5RTtBQUNBO0FBQ0E7QUFDQSwwQkFBMEIsaUZBQTRDO0FBQ3RFOzs7O0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLDJCQUEyQix1REFBa0I7QUFDN0M7QUFDQTtBQUNBO0FBQ0EsZ0VBQWdFLFVBQVUsNERBQXVCLENBQUM7QUFDbEc7QUFDQTtBQUNBLGdEQUFnRCw2REFBd0I7QUFDeEUsMkRBQTJELFFBQVE7QUFDbkUsd0VBQXdFLGFBQWE7O0FBRXJGOzs7O0FBSUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSx5Q0FBeUMsd0RBQW1CO0FBQzVEO0FBQ0E7QUFDQSxhQUFhO0FBQ2I7QUFDQTtBQUNBLGdDQUFnQyxzRUFBaUM7QUFDakU7QUFDQSxxRUFBcUUsZUFBZTs7O0FBR3BGO0FBQ0EsaUNBQWlDLHdEQUFtQjs7QUFFcEQ7QUFDQSx1Q0FBdUMsNkRBQXdCO0FBQy9ELHVDQUF1Qyw4REFBeUI7QUFDaEUsdURBQXVELEdBQUc7QUFDMUQsdURBQXVELEdBQUc7O0FBRTFEO0FBQ0E7O0FBRUE7QUFDQTs7QUFFQTtBQUNBO0FBQ0E7QUFDQTs7O0FBR0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBLFNBQVM7OztBQUdUO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7O0FBRUE7QUFDQTtBQUNBLFNBQVM7O0FBRVQ7QUFDQTs7OztBQUlBO0FBQ0EsOERBQThELEdBQUc7QUFDakU7QUFDQTtBQUNBO0FBQ0E7QUFDQSxrQkFBa0Isc0JBQXNCO0FBQ3hDO0FBQ0EseUI7QUFDQTtBQUNBO0FBQ0E7QUFDQTtBQUNBO0FBQ0Esa0hBQWtIO0FBQ2xIO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFQTtBQUNBLDhEQUE4RCxHQUFHO0FBQ2pFO0FBQ0E7QUFDQTtBQUNBO0FBQ0EsOEJBQThCLEtBQUs7O0FBRW5DO0FBQ0E7QUFDQTs7QUFFQTtBQUNBLDRCQUE0QixtQkFBbUIsR0FBRyxpQkFBaUI7QUFDbkU7O0FBRUE7QUFDQSw4REFBOEQsR0FBRztBQUNqRTtBQUNBO0FBQ0E7QUFDQTtBQUNBLDhCQUE4QixLQUFLOztBQUVuQztBQUNBO0FBQ0E7O0FBRUE7QUFDQSw0QkFBNEIsZ0NBQWdDLEdBQUcsaUJBQWlCO0FBQ2hGOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSxrQkFBa0IscUJBQXFCO0FBQ3ZDO0FBQ0Esd0ZBQXdGLEVBQUU7QUFDMUY7QUFDQTtBQUNBOztBQUVBO0FBQ0E7OztBQUdBO0FBQ0E7QUFDQSIsImZpbGUiOiIuL3NyYy9sYXlvdXQuanMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgKiBhcyBSVyBmcm9tIFwiLi9jb25zdGFudHNcIjtcclxuXHJcbmV4cG9ydCBkZWZhdWx0IGNsYXNzIExheW91dCB7XHJcbiAgICBzdGF0aWMgc2hvdyhkYXRhKSB7XHJcbiAgICAgICAgLy9maXJzdCwgY2xlYXIgdGhlIGRhdGFcclxuICAgICAgICBMYXlvdXQuY2xlYXIoKTtcclxuICAgICAgICBjb25zdCB7IFxyXG4gICAgICAgICAgICB0b3RhbFRpbWUsIHRvdGFsRm9vZCwgY3ljbGVzLCBleHRyYUN5Y2xlcyxcclxuICAgICAgICAgICAgc3Vydml2ZXMsIGRlYXRocywgcXVpdHMsIGtpbGxzLFxyXG4gICAgICAgICAgICBzd2FsbG93ZWRJdGVtLCBoZWxwZWRQZWJibGVzLCBkZWxpdmVyZWRQYXlsb2FkLCBhc2NlbmRlZCxcclxuICAgICAgICAgICAgd2FuZGVyZXIsIHNjaG9sYXIsIHN1cnZpdm9yLCBvdXRsYXcsIGh1bnRlciwgZnJpZW5kLCBtb25rLCBjaGllZnRhaW4sIHNhaW50LCBkcmFnb25TbGF5ZXIsXHJcbiAgICAgICAgICAgIGthcm1hLCBrYXJtYUNhcFxyXG4gICAgICAgIH0gPSBkYXRhO1xyXG4gICAgICAgIFxyXG4gICAgICAgIC8vZ2VuZXJhbCBkYXRhXHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi50b3RhbFRpbWVcIikuaW5uZXJIVE1MID0gdG90YWxUaW1lO1xyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIudG90YWxGb29kXCIpLmlubmVySFRNTCA9IHRvdGFsRm9vZDtcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLnRvdGFsQ3ljbGVzXCIpLmlubmVySFRNTCA9IGN5Y2xlcztcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLnJlbWFpbmluZ0N5Y2xlc1wiKS5pbm5lckhUTUwgPSAoMjAgLSBwYXJzZUludChjeWNsZXMpICsgKChleHRyYUN5Y2xlcykgPyA1IDogMCkpIHx8IFwiXCI7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5zdXJ2aXZlc1wiKS5pbm5lckhUTUwgPSBzdXJ2aXZlcztcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmRlYXRoc1wiKS5pbm5lckhUTUwgPSBkZWF0aHM7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5xdWl0c1wiKS5pbm5lckhUTUwgPSBxdWl0cztcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmN1cnJlbnRLYXJtYVwiKS5pbm5lckhUTUwgPSBrYXJtYTtcclxuICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLmthcm1hQ2FwXCIpLmlubmVySFRNTCA9IGthcm1hQ2FwO1xyXG4gICAgICAgIGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIucXVpdHNcIikuaW5uZXJIVE1MID0gcXVpdHM7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5pdGVtU3dhbGxvd2VkXCIpLmlubmVyVGV4dCA9IChzd2FsbG93ZWRJdGVtICE9IFwiXCIpID8gc3dhbGxvd2VkSXRlbSA6IFwiPE5vbmU+XCI7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5oZWxwZWRQZWJibGVzXCIpLmlubmVySFRNTCA9IChoZWxwZWRQZWJibGVzKSA/IFwiWWVzXCIgOiBcIk5vXCI7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5kZWxpdmVyZWRQYXlsb2FkXCIpLmlubmVySFRNTCA9IChkZWxpdmVyZWRQYXlsb2FkKSA/IFwiWWVzXCIgOiBcIk5vXCI7XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5hc2NlbmRlZFwiKS5pbm5lckhUTUwgPSAoYXNjZW5kZWQpID8gXCJZZXNcIiA6IFwiTm9cIjtcclxuXHJcbiAgICAgICAgLy9zZXR1cCBwbGFjZXNcclxuICAgICAgICBpZih3YW5kZXJlciAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgIC8vdG9nZ2xlIHVubG9ja2VkIG9uIGFueSB0aGF0IGFyZSBjb21wbGV0ZWRcclxuICAgICAgICAgICAgY29uc3QgZGl2cyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoXCJbZGF0YS1yZWdpb25dXCIpO1xyXG4gICAgICAgICAgICBmb3IobGV0IGkgPSAwOyBpIDwgZGl2cy5sZW5ndGg7IGkrKykge1xyXG4gICAgICAgICAgICAgICAgY29uc3QgcmVnRGl2ID0gZGl2c1tpXTtcclxuICAgICAgICAgICAgICAgIGNvbnN0IGZ1bGxOYW1lID0gZ2V0S2V5QnlWYWx1ZShSVy5SZWdpb25Mb29rdXAsIHJlZ0Rpdi5kYXRhc2V0LnJlZ2lvbik7XHJcbiAgICAgICAgICAgICAgICBpZih3YW5kZXJlci52aXNpdGVkLmluZGV4T2YoZnVsbE5hbWUpICE9IC0xKSByZWdEaXYuY2xhc3NMaXN0LmFkZChcInVubG9ja2VkXCIpO1xyXG4gICAgICAgICAgICAgICAgZWxzZSByZWdEaXYuY2xhc3NMaXN0LnJlbW92ZShcInVubG9ja2VkXCIpO1xyXG4gICAgICAgICAgICB9XHJcbiAgICAgICAgICAgIC8vaGFuZGxlIGRlcHRoc1xyXG4gICAgICAgICAgICBpZihhc2NlbmRlZCkgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIltkYXRhLXJlZ2lvbj0nZHAnXVwiKS5jbGFzc0xpc3QuYWRkKFwidW5sb2NrZWRcIik7XHJcbiAgICAgICAgICAgIGVsc2UgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIltkYXRhLXJlZ2lvbj0nZHAnXVwiKS5jbGFzc0xpc3QucmVtb3ZlKFwidW5sb2NrZWRcIik7XHJcbiAgICAgICAgfVxyXG5cclxuICAgICAgICAvL2FjaGlldmVtZW50c1xyXG4gICAgICAgIC8vc3Vydml2b3JcclxuICAgICAgICBpZihzdXJ2aXZvciAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgIC8vdW5oaWRlIG90aGVyc1xyXG4gICAgICAgICAgICBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiLnN1cnZpdm9yLWhpZGRlblwiKS5jbGFzc0xpc3QucmVtb3ZlKFwiaGlkZVwiKTtcclxuICAgICAgICAgICAgc2V0dXBQaXBBY2hpZXZlbWVudChcInN1cnZpdm9yXCIsIFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMuc3Vydml2b3IsIHN1cnZpdm9yLCB0cnVlKTtcclxuICAgICAgICB9XHJcbiAgICAgICAgLy93YW5kZXJlclxyXG4gICAgICAgIGlmKHdhbmRlcmVyICE9IG51bGwpIHtcclxuICAgICAgICAgICAgc2V0dXBQaXBBY2hpZXZlbWVudChcIndhbmRlcmVyXCIsIFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMudHJhdmVsbGVyLCB3YW5kZXJlcik7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIC8vc2Nob2xhclxyXG4gICAgICAgIGlmKHNjaG9sYXIgIT0gbnVsbCkge1xyXG4gICAgICAgICAgICBzZXR1cFBpcEFjaGlldmVtZW50KFwic2Nob2xhclwiLFJXLiBBY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLnNjaG9sYXIsIHNjaG9sYXIpO1xyXG4gICAgICAgIH0gICAgXHJcbiAgICAgICAgLy9vdXRsYXdcclxuICAgICAgICBpZihvdXRsYXcgIT0gbnVsbCkge1xyXG4gICAgICAgIHNldHVwSW50QWNoaWV2ZW1lbnQoXCJvdXRsYXdcIiwgUlcuQWNoaWV2ZW1lbnRQb2ludFJlcXVpcmVtZW50cy5vdXRsYXcsIG91dGxhdyk7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIC8vaHVudGVyXHJcbiAgICAgICAgaWYoaHVudGVyICE9IG51bGwpIHtcclxuICAgICAgICAgICAgc2V0dXBJbnRBY2hpZXZlbWVudChcImh1bnRlclwiLCBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLmh1bnRlciwgaHVudGVyKTtcclxuICAgICAgICB9XHJcbiAgICAgICAgLy9mcmllbmRcclxuICAgICAgICBpZihmcmllbmQgIT0gbnVsbCkge1xyXG4gICAgICAgICAgICBzZXR1cEZsb2F0QWNoaWV2ZW1lbnQoXCJmcmllbmRcIiwgUlcuQWNoaWV2ZW1lbnRQb2ludFJlcXVpcmVtZW50cy5mcmllbmQsIGZyaWVuZCk7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIC8vbW9ua1xyXG4gICAgICAgIGlmKG1vbmsgIT0gbnVsbCkge1xyXG4gICAgICAgICAgICBzZXR1cEludEFjaGlldmVtZW50KFwibW9ua1wiLCBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLm1vbmssIG1vbmspO1xyXG4gICAgICAgIH1cclxuICAgICAgICAvL2NoaWVmdGFpblxyXG4gICAgICAgIGlmKGNoaWVmdGFpbiAhPSBudWxsKSB7XHJcbiAgICAgICAgICAgIHNldHVwRmxvYXRBY2hpZXZlbWVudChcImNoaWVmdGFpblwiLCBSVy5BY2hpZXZlbWVudFBvaW50UmVxdWlyZW1lbnRzLmNoaWVmdGFpbiwgY2hpZWZ0YWluKTtcclxuICAgICAgICB9XHJcbiAgICAgICAgLy9zYWludFxyXG4gICAgICAgIGlmKHNhaW50ICE9IG51bGwpIHtcclxuICAgICAgICAgICAgc2V0dXBJbnRBY2hpZXZlbWVudChcInNhaW50XCIsIFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMuc2FpbnQsIHNhaW50KTtcclxuICAgICAgICB9XHJcbiAgICAgICAgLy9kcmFnb25TbGF5ZXJcclxuICAgICAgICBpZihkcmFnb25TbGF5ZXIgIT0gbnVsbCkge1xyXG4gICAgICAgIHNldHVwRHJhZ29uU2xheWVyKFJXLkFjaGlldmVtZW50UG9pbnRSZXF1aXJlbWVudHMuZHJhZ29uU2xheWVyLCBkcmFnb25TbGF5ZXIpO1xyXG4gICAgICAgIH1cclxuXHJcblxyXG5cclxuICAgICAgICAvL2hhbmRsZSBrYXJtYSBkYXRhXHJcbiAgICAgICAgaWYoa2FybWEgIT0gbnVsbCkge1xyXG4gICAgICAgICAgICBjb25zdCBhY3RpdmVLYXJtYURpdiA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIua2FybWEuYWN0aXZlXCIpO1xyXG4gICAgICAgICAgICBjb25zdCBpbmFjdGl2ZUthcm1hRGl2ID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5rYXJtYS5pbmFjdGl2ZVwiKTtcclxuICAgICAgICAgICAgLy9sb29rIGZvciBhIGthcm1hIGNhcFxyXG4gICAgICAgICAgICBsZXQgY2FwID0ga2FybWFDYXAgfHwgNDtcclxuICAgICAgICAgICAgbGV0IGN1cnJLYXJtYSA9IE1hdGgubWluKGthcm1hLCBjYXApO1xyXG4gICAgICAgICAgICAvL2NvbXBhcmUgZm9yIGNvbHVtbiBpbmRleFxyXG4gICAgICAgICAgICBjb25zdCBjb2x1bW4gPSBSVy5LYXJtYUNhcFRyYWNrZXJbY2FwLnRvU3RyaW5nKCldO1xyXG4gICAgICAgICAgICBjb25zb2xlLmxvZyhjb2x1bW4pO1xyXG4gICAgICAgICAgICAvL21vdmUgdG8gcHJvcGVyIGluZGV4XHJcbiAgICAgICAgICAgIGFjdGl2ZUthcm1hRGl2LnN0eWxlLmJhY2tncm91bmRQb3NpdGlvblggPSBcclxuICAgICAgICAgICAgICAgIGluYWN0aXZlS2FybWFEaXYuc3R5bGUuYmFja2dyb3VuZFBvc2l0aW9uWCA9IGAkey1jb2x1bW4gKiBSVy5LYXJtYUF0bGFzU2l6ZS53aWR0aH1weGA7XHJcbiAgICAgICAgICAgIC8vbW92ZSBkaWFsIHRvIHByb3BlciB5IHBvc2l0aW9uXHJcbiAgICAgICAgICAgIC8vc3dpdGNoIHRoZSBhY3RpdmUgdG8gdGhlIGN1cnJlbnQgdHlwZVxyXG4gICAgICAgICAgICBjb25zdCBvZmZzZXRZID0gKDkgLSBjdXJyS2FybWEgICkgKiBSVy5LYXJtYUF0bGFzU2l6ZS5oZWlnaHQ7XHJcbiAgICAgICAgICAgIGFjdGl2ZUthcm1hRGl2LnN0eWxlLmJhY2tncm91bmRQb3NpdGlvblkgPSBgLSR7b2Zmc2V0WX1weGA7XHJcbiAgICAgICAgICAgIGluYWN0aXZlS2FybWFEaXYuc3R5bGUuYmFja2dyb3VuZFBvc2l0aW9uWSA9IGBjYWxjKC01MCUgLSAke29mZnNldFkgKyA3NX1weClgO1xyXG5cclxuICAgICAgICB9XHJcblxyXG5cclxuXHJcbiAgICAgICAgLy9oYW5kbGUga2lsbHMgZGF0YVxyXG4gICAgICAgIGlmKGtpbGxzICE9IG51bGwpIHtcclxuICAgICAgICAgICAgaWYoa2lsbHMubGVuZ3RoIDw9IDApIHJldHVybjtcclxuICAgICAgICAgICAgLy9vcmRlciBieSBiaWdnZXN0IGJveSBwb2ludHNcclxuICAgICAgICAgICAgLy8ga2lsbHMuc29ydCgoYSwgYikgPT4gYS5zY29yZSA+IGIuc2NvcmUgPyAtMSA6IDEpO1xyXG4gICAgICAgICAgICAvL29yZGVyIGJ5IGhpZXJhcmNoeVxyXG4gICAgICAgICAgICBraWxscy5zb3J0KChhLCBiKSA9PiB7XHJcbiAgICAgICAgICAgICAgICBjb25zdCBrZXlzID0gT2JqZWN0LmtleXMoUlcuU3ByaXRlQXRsYXNJbmRleCk7XHJcbiAgICAgICAgICAgICAgICBpZihrZXlzLmluZGV4T2YoYS5rZXkpID4ga2V5cy5pbmRleE9mKGIua2V5KSkgcmV0dXJuIDE7XHJcbiAgICAgICAgICAgICAgICBlbHNlIHJldHVybiAtMTtcclxuICAgICAgICAgICAgfSk7XHJcbiAgICAgICAgICAgIGZvcihsZXQga2lsbERhdGEgb2Yga2lsbHMpIHtcclxuICAgICAgICAgICAgICAgIC8vY3JlYXRlIGEga2lsbCB0ZW1wbGF0ZVxyXG4gICAgICAgICAgICAgICAgY29uc3Qga2lsbERpdiA9IFJXLkNyZWF0dXJlS2lsbFRlbXBsYXRlLmNsb25lTm9kZSh0cnVlKTtcclxuICAgICAgICAgICAgICAgIGtpbGxEaXYucXVlcnlTZWxlY3RvcihcIi5raWxsLWFtb3VudFwiKS5pbm5lckhUTUwgPSBraWxsRGF0YS5raWxscztcclxuICAgICAgICAgICAgICAgIGtpbGxEaXYucXVlcnlTZWxlY3RvcihcIi5raWxsLXdvcnRoXCIpLmlubmVySFRNTCA9IGB4JHtraWxsRGF0YS5zY29yZX1gO1xyXG5cclxuICAgICAgICAgICAgICAgIFxyXG4gICAgICAgICAgICAgICAgLy9nZXQgdGhlIGljb25cclxuICAgICAgICAgICAgICAgIGNvbnN0IHBvc2l0aW9uID0gUlcuU3ByaXRlQXRsYXNJbmRleFtraWxsRGF0YS5rZXldO1xyXG5cclxuICAgICAgICAgICAgICAgIGNvbnN0IGljb25EaXYgPSBraWxsRGl2LnF1ZXJ5U2VsZWN0b3IoXCIuY3JlYXR1cmUtaWNvblwiKTtcclxuICAgICAgICAgICAgICAgIGNvbnN0IHggPSBwb3NpdGlvbi54ICogUlcuU3ByaXRlQXRsYXNTaXplLndpZHRoO1xyXG4gICAgICAgICAgICAgICAgY29uc3QgeSA9IHBvc2l0aW9uLnkgKiBSVy5TcHJpdGVBdGxhc1NpemUuaGVpZ2h0O1xyXG4gICAgICAgICAgICAgICAgaWNvbkRpdi5zdHlsZS5iYWNrZ3JvdW5kUG9zaXRpb25YID0gYCR7LXh9cHhgO1xyXG4gICAgICAgICAgICAgICAgaWNvbkRpdi5zdHlsZS5iYWNrZ3JvdW5kUG9zaXRpb25ZID0gYCR7LXl9cHhgO1xyXG5cclxuICAgICAgICAgICAgICAgIC8vYWRkIGEgaG92ZXJcclxuICAgICAgICAgICAgICAgIGljb25EaXYudGl0bGUgPSBraWxsRGl2LnF1ZXJ5U2VsZWN0b3IoXCIua2lsbC1hbW91bnRcIikudGl0bGUgPSBraWxsRGF0YS5uYW1lO1xyXG5cclxuICAgICAgICAgICAgICAgIC8vYXR0YWNoIHRvIGNvbnRhaW5lclxyXG4gICAgICAgICAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5jcmVhdHVyZS1raWxsLWNvbnRhaW5lclwiKS5hcHBlbmRDaGlsZChraWxsRGl2KTtcclxuXHJcbiAgICAgICAgICAgICAgICAvLyByZXR1cm47XHJcbiAgICAgICAgICAgIH1cclxuICAgICAgICB9XHJcbiAgICB9XHJcblxyXG5cclxuICAgIHN0YXRpYyBjbGVhcigpIHtcclxuICAgICAgICAvL3JlbG9jayBtYXBcclxuICAgICAgICBjb25zdCBtYXBEaXZzID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvckFsbChcIltkYXRhLXJlZ2lvbl1cIik7XHJcbiAgICAgICAgbWFwRGl2cy5mb3JFYWNoKChlbCkgPT4gZWwuY2xhc3NMaXN0LnJlbW92ZShcInVubG9ja2VkXCIpKTtcclxuXHJcbiAgICAgICAgLy9kZWxldGUga2lsbHNcclxuICAgICAgICBjb25zdCBraWxsRGl2cyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoXCIuY3JlYXR1cmUta2lsbFwiKTtcclxuICAgICAgICBraWxsRGl2cy5mb3JFYWNoKChlbCkgPT4ge1xyXG4gICAgICAgICAgICBlbC5yZW1vdmUoKTtcclxuICAgICAgICAgICAgZWwgPSBudWxsO1xyXG4gICAgICAgIH0pO1xyXG5cclxuXHJcbiAgICAgICAgLy9yZXNldCBhY2hpZXZlbWVudHNcclxuICAgICAgICBjb25zdCBhY2hpZXZlRGl2cyA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3JBbGwoXCIuYWNoaWV2ZW1lbnRcIik7XHJcbiAgICAgICAgYWNoaWV2ZURpdnMuZm9yRWFjaCgoZWwpID0+IHtcclxuICAgICAgICAgICAgZWwuY2xhc3NMaXN0LnJlbW92ZShcImNvbXBsZXRlXCIpO1xyXG4gICAgICAgICAgICBlbC5jbGFzc0xpc3QuYWRkKFwiaW5hY3RpdmVcIik7XHJcblxyXG4gICAgICAgICAgICBjb25zdCBwaXBzID0gZWwucXVlcnlTZWxlY3RvcihcIi5waXBzXCIpO1xyXG4gICAgICAgICAgICBpZihwaXBzICE9IG51bGwpIHBpcHMuaW5uZXJIVE1MID0gXCJcIjtcclxuICAgICAgICB9KTtcclxuXHJcbiAgICB9XHJcbn1cclxuXHJcblxyXG5cclxuZnVuY3Rpb24gc2V0dXBQaXBBY2hpZXZlbWVudChpZCwgcG9pbnRSZXF1aXJlbWVudCwgb2JqLCBzdGF0aWNWYWx1ZT1mYWxzZSkge1xyXG4gICAgY29uc3QgYURpdiA9IGRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoYFtkYXRhLWFjaGlldmVtZW50PScke2lkfSddYCk7XHJcbiAgICBhRGl2LmNsYXNzTGlzdC5yZW1vdmUoXCJpbmFjdGl2ZVwiKTtcclxuICAgIC8vc2V0IHRoZSBwaXBzXHJcbiAgICBjb25zdCBwaXBzRGl2ID0gYURpdi5xdWVyeVNlbGVjdG9yKFwiLnBpcHNcIik7XHJcbiAgICAvLyBjb25zdCBsZW5ndGggPSAoc3RhdGljVmFsdWUpID8gcGFyc2VJbnQob2JqLmRhdGEpIDogb2JqLmRhdGEubGVuZ3RoO1xyXG4gICAgZm9yKGxldCBpID0gMDsgaSA8IHBvaW50UmVxdWlyZW1lbnQ7IGkrKykge1xyXG4gICAgICAgIGNvbnN0IHBpcCA9IGRvY3VtZW50LmNyZWF0ZUVsZW1lbnQoXCJkaXZcIik7XHJcbiAgICAgICAgaWYoc3RhdGljVmFsdWUpIHsgXHJcbiAgICAgICAgICAgIGlmKHBhcnNlSW50KG9iai5kYXRhKSA+IGkpIHBpcC5jbGFzc0xpc3QuYWRkKFwicGlwXCIsIFwiZnVsbFwiKTtcclxuICAgICAgICAgICAgZWxzZSBwaXAuY2xhc3NMaXN0LmFkZChcInBpcFwiLCBcImVtcHR5XCIpO1xyXG4gICAgICAgIH1cclxuICAgICAgICBlbHNlIHtcclxuICAgICAgICAgICAgaWYob2JqLmRhdGFbaV0gPT0gMSkgcGlwLmNsYXNzTGlzdC5hZGQoXCJwaXBcIiwgXCJmdWxsXCIpO1xyXG4gICAgICAgICAgICBlbHNlIGlmKG9iai5kYXRhW2ldICE9IDEgJiYgb2JqLmRhdGFbaV0gIT0gMCAmJiBpIDwgb2JqLmRhdGEubGVuZ3RoKSBwaXAuY2xhc3NMaXN0LmFkZChcInBpcFwiLCBcImZ1bGxcIik7IC8vZGF0YS1wZWFybFxyXG4gICAgICAgICAgICBlbHNlIHBpcC5jbGFzc0xpc3QuYWRkKFwicGlwXCIsIFwiZW1wdHlcIik7XHJcbiAgICAgICAgfVxyXG4gICAgICAgIHBpcHNEaXYuYXBwZW5kQ2hpbGQocGlwKTtcclxuICAgIH1cclxuXHJcbiAgICBjb25zdCBwcm9ncmVzc0RpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5wcm9ncmVzc1wiKTtcclxuICAgIGlmKHBpcHNEaXYuY2hpbGROb2Rlcy5sZW5ndGggPiAwKSB7XHJcbiAgICAgICAgcHJvZ3Jlc3NEaXYuaW5uZXJIVE1MID0gXCJcIjtcclxuICAgIH1cclxuICAgIGlmKG9iai5jb21wbGV0ZWQpIGFEaXYuY2xhc3NMaXN0LmFkZChcImNvbXBsZXRlXCIpO1xyXG59XHJcblxyXG5mdW5jdGlvbiBzZXR1cEludEFjaGlldmVtZW50KGlkLCBwb2ludFJlcXVpcmVtZW50LCBvYmopIHtcclxuICAgIGNvbnN0IGFEaXYgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKGBbZGF0YS1hY2hpZXZlbWVudD0nJHtpZH0nXWApO1xyXG4gICAgYURpdi5jbGFzc0xpc3QucmVtb3ZlKFwiaW5hY3RpdmVcIik7XHJcbiAgICAvL3NldCB0aGUgc3RhdHVzXHJcbiAgICBjb25zdCBzdGF0dXNEaXYgPSBhRGl2LnF1ZXJ5U2VsZWN0b3IoXCIuc3RhdHVzLWJhciAuc2xpZGVyXCIpO1xyXG4gICAgY29uc3QgcGVyYyA9IChwYXJzZUludChvYmouZGF0YSkgLyBwb2ludFJlcXVpcmVtZW50KSAqIDEwMDtcclxuICAgIHN0YXR1c0Rpdi5zdHlsZS5sZWZ0ID0gYCR7cGVyY30lYDtcclxuXHJcbiAgICBjb25zdCBwcm9ncmVzc0RpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5wcm9ncmVzc1wiKTtcclxuICAgIHByb2dyZXNzRGl2LmlubmVySFRNTCA9IFwiXCI7XHJcbiAgICBpZihvYmouY29tcGxldGVkKSBhRGl2LmNsYXNzTGlzdC5hZGQoXCJjb21wbGV0ZVwiKTtcclxuXHJcbiAgICBjb25zdCBjb3VudERpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5jb3VudFwiKTtcclxuICAgIGNvdW50RGl2LmlubmVySFRNTCA9IGAke3BhcnNlSW50KG9iai5kYXRhKX0vJHtwb2ludFJlcXVpcmVtZW50fWA7XHJcbn1cclxuXHJcbmZ1bmN0aW9uIHNldHVwRmxvYXRBY2hpZXZlbWVudChpZCwgcG9pbnRSZXF1aXJlbWVudCwgb2JqKSB7XHJcbiAgICBjb25zdCBhRGl2ID0gZG9jdW1lbnQucXVlcnlTZWxlY3RvcihgW2RhdGEtYWNoaWV2ZW1lbnQ9JyR7aWR9J11gKTtcclxuICAgIGFEaXYuY2xhc3NMaXN0LnJlbW92ZShcImluYWN0aXZlXCIpO1xyXG4gICAgLy9zZXQgdGhlIHN0YXR1c1xyXG4gICAgY29uc3Qgc3RhdHVzRGl2ID0gYURpdi5xdWVyeVNlbGVjdG9yKFwiLnN0YXR1cy1iYXIgLnNsaWRlclwiKTtcclxuICAgIGNvbnN0IHBlcmMgPSAocGFyc2VGbG9hdChvYmouZGF0YSkgLyBwb2ludFJlcXVpcmVtZW50KSAqIDEwMDtcclxuICAgIHN0YXR1c0Rpdi5zdHlsZS5sZWZ0ID0gYCR7cGVyY30lYDtcclxuXHJcbiAgICBjb25zdCBwcm9ncmVzc0RpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5wcm9ncmVzc1wiKTtcclxuICAgIHByb2dyZXNzRGl2LmlubmVySFRNTCA9IFwiXCI7XHJcbiAgICBpZihvYmouY29tcGxldGVkKSBhRGl2LmNsYXNzTGlzdC5hZGQoXCJjb21wbGV0ZVwiKTtcclxuXHJcbiAgICBjb25zdCBjb3VudERpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5jb3VudFwiKTtcclxuICAgIGNvdW50RGl2LmlubmVySFRNTCA9IGAke3BhcnNlRmxvYXQob2JqLmRhdGEpLnRvRml4ZWQoMil9LyR7cG9pbnRSZXF1aXJlbWVudH1gO1xyXG59XHJcblxyXG5mdW5jdGlvbiBzZXR1cERyYWdvblNsYXllcihwb2ludFJlcXVpcmVtZW50LCBvYmopIHtcclxuICAgIGNvbnN0IGFEaXYgPSBkb2N1bWVudC5xdWVyeVNlbGVjdG9yKFwiW2RhdGEtYWNoaWV2ZW1lbnQ9J2RyYWdvblNsYXllciddXCIpO1xyXG4gICAgYURpdi5jbGFzc0xpc3QucmVtb3ZlKFwiaW5hY3RpdmVcIik7XHJcbiAgICAvL3NldCB0aGUgcGlwc1xyXG4gICAgY29uc3QgcGlwc0RpdiA9IGFEaXYucXVlcnlTZWxlY3RvcihcIi5waXBzXCIpO1xyXG4gICAgZm9yKGxldCBpID0gMDsgaSA8IG9iai5kYXRhLmxlbmd0aDsgaSsrKSB7XHJcbiAgICAgICAgY29uc3QgcGlwID0gZG9jdW1lbnQuY3JlYXRlRWxlbWVudChcImRpdlwiKTtcclxuICAgICAgICBpZihvYmouZGF0YVtpXSA9PSBcIjFcIikgcGlwLmNsYXNzTGlzdC5hZGQoXCJwaXBcIiwgXCJmdWxsXCIsIFwiZHJhZ29uLXNsYXllclwiLCBgcGlwLSR7aX1gKTtcclxuICAgICAgICBlbHNlIHBpcC5jbGFzc0xpc3QuYWRkKFwicGlwXCIsIFwiZW1wdHlcIik7XHJcbiAgICAgICAgcGlwc0Rpdi5hcHBlbmRDaGlsZChwaXApO1xyXG4gICAgfVxyXG5cclxuICAgIGlmKG9iai5jb21wbGV0ZWQpIGFEaXYuY2xhc3NMaXN0LmFkZChcImNvbXBsZXRlXCIpO1xyXG59XHJcblxyXG5cclxuZnVuY3Rpb24gZ2V0S2V5QnlWYWx1ZShvYmplY3QsIHZhbHVlKSB7XHJcbiAgICByZXR1cm4gT2JqZWN0LmtleXMob2JqZWN0KS5maW5kKGtleSA9PiBvYmplY3Rba2V5XSA9PT0gdmFsdWUpO1xyXG59XHJcbiJdLCJzb3VyY2VSb290IjoiIn0=\n//# sourceURL=webpack-internal:///./src/layout.js\n");
+
+/***/ }),
+
+/***/ "./src/rainworld-tracker.js":
+/*!**********************************!*\
+  !*** ./src/rainworld-tracker.js ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _Log__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Log */ \"./src/Log.js\");\n/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./constants */ \"./src/constants.js\");\n/* harmony import */ var _Parser__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Parser */ \"./src/Parser.js\");\n/* harmony import */ var _layout__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./layout */ \"./src/layout.js\");\n/* harmony import */ var _Score__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Score */ \"./src/Score.js\");\n\r\n\r\n\r\n\r\n\r\n\r\n\r\nnew _Log__WEBPACK_IMPORTED_MODULE_0__.default();\r\nnew _Score__WEBPACK_IMPORTED_MODULE_4__.default();\r\n\r\nlet rainworldData;\r\n\r\n\r\n//listen for save file change\r\ndocument.getElementById(\"file-upload\").addEventListener(\"change\", (e) => {\r\n    //if we have a value, fetch and send\r\n    if(e.target.files.length <= 0) return;\r\n\r\n    //try to parse\r\n    var fileReader = new FileReader();\r\n    fileReader.onload = (ev) => {\r\n        // console.log(fileReader.result);\r\n        const data = _Parser__WEBPACK_IMPORTED_MODULE_2__.default.parse(fileReader.result);\r\n        _layout__WEBPACK_IMPORTED_MODULE_3__.default.show(data);\r\n        rainworldData = data;\r\n\r\n        //set the name in the text\r\n        document.querySelector(\".file-input .name\").innerHTML = e.target.files[0].name;\r\n\r\n        //set preview\r\n        document.getElementById(\"rank-preview\").innerHTML = _Log__WEBPACK_IMPORTED_MODULE_0__.default.compute(rainworldData);\r\n        document.getElementById(\"kills-preview\").innerHTML = _Log__WEBPACK_IMPORTED_MODULE_0__.default.getKillsScore(rainworldData);\r\n    };\r\n    fileReader.readAsText(e.target.files[0]);\r\n});\r\n\r\n\r\n\r\ndocument.querySelector(\".btn-calculate\").addEventListener(\"click\", () => {\r\n    _Score__WEBPACK_IMPORTED_MODULE_4__.default.show(rainworldData);\r\n});\r\ndocument.querySelector(\".btn-sample\").addEventListener(\"click\", () => {\r\n    //show sample file\r\n    fetch('sav-comp.txt')\r\n    .then(function(blob) {\r\n        return blob.text();\r\n    })\r\n    .then(function(txt) {\r\n        //parse out hunter data\r\n        const data = _Parser__WEBPACK_IMPORTED_MODULE_2__.default.parse(txt);\r\n        rainworldData = data;\r\n        _layout__WEBPACK_IMPORTED_MODULE_3__.default.show(data);\r\n\r\n        //set preview\r\n        document.getElementById(\"rank-preview\").innerHTML = _Log__WEBPACK_IMPORTED_MODULE_0__.default.compute(rainworldData);\r\n        document.getElementById(\"kills-preview\").innerHTML = _Log__WEBPACK_IMPORTED_MODULE_0__.default.getKillsScore(rainworldData);\r\n    });\r\n});\r\n\r\n\r\n\r\n\r\n/*------------- LAYOUT ----------------*/\r\n\r\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJzb3VyY2VzIjpbIndlYnBhY2s6Ly9yYWlud29ybGQtdHJhY2tlci8uL3NyYy9yYWlud29ybGQtdHJhY2tlci5qcz9mZmJlIl0sIm5hbWVzIjpbXSwibWFwcGluZ3MiOiI7Ozs7OztBQUF3QjtBQUNVO0FBQ0o7QUFDQTtBQUNGOzs7QUFHNUIsSUFBSSx5Q0FBRztBQUNQLElBQUksMkNBQUs7O0FBRVQ7OztBQUdBO0FBQ0E7QUFDQTtBQUNBOztBQUVBO0FBQ0E7QUFDQTtBQUNBO0FBQ0EscUJBQXFCLGtEQUFZO0FBQ2pDLFFBQVEsaURBQVc7QUFDbkI7O0FBRUE7QUFDQTs7QUFFQTtBQUNBLDREQUE0RCxpREFBVztBQUN2RSw2REFBNkQsdURBQWlCO0FBQzlFO0FBQ0E7QUFDQSxDQUFDOzs7O0FBSUQ7QUFDQSxJQUFJLGdEQUFVO0FBQ2QsQ0FBQztBQUNEO0FBQ0E7QUFDQTtBQUNBO0FBQ0E7QUFDQSxLQUFLO0FBQ0w7QUFDQTtBQUNBLHFCQUFxQixrREFBWTtBQUNqQztBQUNBLFFBQVEsaURBQVc7O0FBRW5CO0FBQ0EsNERBQTRELGlEQUFXO0FBQ3ZFLDZEQUE2RCx1REFBaUI7QUFDOUUsS0FBSztBQUNMLENBQUM7Ozs7O0FBS0QiLCJmaWxlIjoiLi9zcmMvcmFpbndvcmxkLXRyYWNrZXIuanMuanMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgTG9nIGZyb20gJy4vTG9nJztcclxuaW1wb3J0ICogYXMgUlcgZnJvbSBcIi4vY29uc3RhbnRzXCI7XHJcbmltcG9ydCBQYXJzZXIgZnJvbSBcIi4vUGFyc2VyXCI7XHJcbmltcG9ydCBMYXlvdXQgZnJvbSBcIi4vbGF5b3V0XCI7XHJcbmltcG9ydCBTY29yZSBmcm9tIFwiLi9TY29yZVwiO1xyXG5cclxuXHJcbm5ldyBMb2coKTtcclxubmV3IFNjb3JlKCk7XHJcblxyXG5sZXQgcmFpbndvcmxkRGF0YTtcclxuXHJcblxyXG4vL2xpc3RlbiBmb3Igc2F2ZSBmaWxlIGNoYW5nZVxyXG5kb2N1bWVudC5nZXRFbGVtZW50QnlJZChcImZpbGUtdXBsb2FkXCIpLmFkZEV2ZW50TGlzdGVuZXIoXCJjaGFuZ2VcIiwgKGUpID0+IHtcclxuICAgIC8vaWYgd2UgaGF2ZSBhIHZhbHVlLCBmZXRjaCBhbmQgc2VuZFxyXG4gICAgaWYoZS50YXJnZXQuZmlsZXMubGVuZ3RoIDw9IDApIHJldHVybjtcclxuXHJcbiAgICAvL3RyeSB0byBwYXJzZVxyXG4gICAgdmFyIGZpbGVSZWFkZXIgPSBuZXcgRmlsZVJlYWRlcigpO1xyXG4gICAgZmlsZVJlYWRlci5vbmxvYWQgPSAoZXYpID0+IHtcclxuICAgICAgICAvLyBjb25zb2xlLmxvZyhmaWxlUmVhZGVyLnJlc3VsdCk7XHJcbiAgICAgICAgY29uc3QgZGF0YSA9IFBhcnNlci5wYXJzZShmaWxlUmVhZGVyLnJlc3VsdCk7XHJcbiAgICAgICAgTGF5b3V0LnNob3coZGF0YSk7XHJcbiAgICAgICAgcmFpbndvcmxkRGF0YSA9IGRhdGE7XHJcblxyXG4gICAgICAgIC8vc2V0IHRoZSBuYW1lIGluIHRoZSB0ZXh0XHJcbiAgICAgICAgZG9jdW1lbnQucXVlcnlTZWxlY3RvcihcIi5maWxlLWlucHV0IC5uYW1lXCIpLmlubmVySFRNTCA9IGUudGFyZ2V0LmZpbGVzWzBdLm5hbWU7XHJcblxyXG4gICAgICAgIC8vc2V0IHByZXZpZXdcclxuICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChcInJhbmstcHJldmlld1wiKS5pbm5lckhUTUwgPSBMb2cuY29tcHV0ZShyYWlud29ybGREYXRhKTtcclxuICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChcImtpbGxzLXByZXZpZXdcIikuaW5uZXJIVE1MID0gTG9nLmdldEtpbGxzU2NvcmUocmFpbndvcmxkRGF0YSk7XHJcbiAgICB9O1xyXG4gICAgZmlsZVJlYWRlci5yZWFkQXNUZXh0KGUudGFyZ2V0LmZpbGVzWzBdKTtcclxufSk7XHJcblxyXG5cclxuXHJcbmRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIuYnRuLWNhbGN1bGF0ZVwiKS5hZGRFdmVudExpc3RlbmVyKFwiY2xpY2tcIiwgKCkgPT4ge1xyXG4gICAgU2NvcmUuc2hvdyhyYWlud29ybGREYXRhKTtcclxufSk7XHJcbmRvY3VtZW50LnF1ZXJ5U2VsZWN0b3IoXCIuYnRuLXNhbXBsZVwiKS5hZGRFdmVudExpc3RlbmVyKFwiY2xpY2tcIiwgKCkgPT4ge1xyXG4gICAgLy9zaG93IHNhbXBsZSBmaWxlXHJcbiAgICBmZXRjaCgnc2F2LWNvbXAudHh0JylcclxuICAgIC50aGVuKGZ1bmN0aW9uKGJsb2IpIHtcclxuICAgICAgICByZXR1cm4gYmxvYi50ZXh0KCk7XHJcbiAgICB9KVxyXG4gICAgLnRoZW4oZnVuY3Rpb24odHh0KSB7XHJcbiAgICAgICAgLy9wYXJzZSBvdXQgaHVudGVyIGRhdGFcclxuICAgICAgICBjb25zdCBkYXRhID0gUGFyc2VyLnBhcnNlKHR4dCk7XHJcbiAgICAgICAgcmFpbndvcmxkRGF0YSA9IGRhdGE7XHJcbiAgICAgICAgTGF5b3V0LnNob3coZGF0YSk7XHJcblxyXG4gICAgICAgIC8vc2V0IHByZXZpZXdcclxuICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChcInJhbmstcHJldmlld1wiKS5pbm5lckhUTUwgPSBMb2cuY29tcHV0ZShyYWlud29ybGREYXRhKTtcclxuICAgICAgICBkb2N1bWVudC5nZXRFbGVtZW50QnlJZChcImtpbGxzLXByZXZpZXdcIikuaW5uZXJIVE1MID0gTG9nLmdldEtpbGxzU2NvcmUocmFpbndvcmxkRGF0YSk7XHJcbiAgICB9KTtcclxufSk7XHJcblxyXG5cclxuXHJcblxyXG4vKi0tLS0tLS0tLS0tLS0gTEFZT1VUIC0tLS0tLS0tLS0tLS0tLS0qL1xyXG5cclxuIl0sInNvdXJjZVJvb3QiOiIifQ==\n//# sourceURL=webpack-internal:///./src/rainworld-tracker.js\n");
+
+/***/ })
+
+/******/ 	});
+/************************************************************************/
+/******/ 	// The module cache
+/******/ 	var __webpack_module_cache__ = {};
+/******/ 	
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/ 		// Check if module is in cache
+/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
+/******/ 		if (cachedModule !== undefined) {
+/******/ 			return cachedModule.exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = __webpack_module_cache__[moduleId] = {
+/******/ 			// no module.id needed
+/******/ 			// no module.loaded needed
+/******/ 			exports: {}
+/******/ 		};
+/******/ 	
+/******/ 		// Execute the module function
+/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
+/******/ 	
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/ 	
+/************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/make namespace object */
+/******/ 	(() => {
+/******/ 		// define __esModule on exports
+/******/ 		__webpack_require__.r = (exports) => {
+/******/ 			if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 				Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 			}
+/******/ 			Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/************************************************************************/
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module can't be inlined because the eval-source-map devtool is used.
+/******/ 	var __webpack_exports__ = __webpack_require__("./src/rainworld-tracker.js");
+/******/ 	
+/******/ })()
+;

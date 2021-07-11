@@ -16,5 +16,5 @@ This tracker only works for the Steam edition of the game. If you have the PS4/S
 
 
 ## For Developers
-`yarn` - Use to install dependencies.
-`yarn build` - Use to pack the javascript into a minified file.
+- `yarn` - Use to install dependencies.
+- `yarn build` - Use to pack the javascript into a minified file.
